@@ -35,9 +35,8 @@ CONTRAST = "Sen_CAM vs Sen_CTRL"   # the only contrast this figure draws
 
 
 def find_file(patterns, label):
-    """Find a required input by glob pattern(s), checking ./data/ first, then the
-    current folder. Raises loudly and by name if not found -- never silently skips
-    a required input."""
+    """Find a required input by glob pattern(s): checks ./data/ first, then
+    the current folder, and raises FileNotFoundError naming the missing file."""
     for pat in patterns:
         matches = glob.glob(f"{DATA}/{pat}") or glob.glob(pat)
         if matches:
@@ -90,9 +89,9 @@ def _mode_record(mode, cmpd):
     if len(r) == 0:
         return None
     if len(r) > 1:
-        # Duplicate stripped-name collision in this polarity -- surface it explicitly
-        # rather than silently taking row 0. None of the compounds in this scheme
-        # currently hit this, but guard against it if the compound list changes.
+        # Duplicate stripped-name collision in this polarity. None of the
+        # compounds in this scheme hit this, but guard against it if the
+        # compound list changes.
         return {"dup": True, "n_rows": len(r)}
     cv  = pd.to_numeric(r["%CV in QC"], errors="coerce").values[0]
     t   = float(r["Statistical Value"].values[0])
@@ -106,7 +105,7 @@ def node_stat(cmpd):
     it cannot bias toward significance the way an FDR-based tie-break would.
     The only change from the original logic is an explicit floor: a polarity
     with %CV in QC >= 30% (the facility's own stated reliability cutoff) is
-    excluded from consideration rather than silently allowed to win on a technicality.
+    excluded from consideration.
     Also appends a full audit record to AUDIT for later printing/verification."""
     neg = _mode_record("neg", cmpd)
     pos = _mode_record("pos", cmpd)
