@@ -2,26 +2,24 @@
 Fig 4J -- Compact GSEA enrichment plot — pure matplotlib, gseapy 1.1.9
 Fixes: hits is an integer index array — use directly, never np.where()
 
-Inputs -- two kinds:
-
-(1) EV table:
+Input -- one EV table only:
       EV_Table_5*.xlsx -- 'Gene names' plus the galactose-contrast Log2FC/p-value columns.
       The fuzzy Log2FC/-Log10 p-value 'galactose' column matching below works whether or
       not there's a stray double space in the header (the real file has one: '-Log10  p-value
       Sen Galactose vs Sen High Glucose').
 
-(2) NOT an EV table -- unchanged, must still be bundled as its own standalone file:
-      SAUL_SEN_MAYO.v2025.1.Hs.tsv -- the published SenMayo gene set, external reference
-      data, not something generated for this manuscript. Sourced directly from Saul et al.
-      2022 (Nat Commun), Supplementary Data 4, sheet 'human' -- 125 genes -- rather than
-      MSigDB's mirror of it, which is missing one gene (CCL3L1). Re-run against the real
-      EV table with this 125-gene list: NES=1.441, FDR q=0.0316 -- unchanged from the
-      124-gene version and still exactly matching the manuscript's own reported NES=1.44
-      (CCL3L1 isn't among the 29 SenMayo genes detected in this dataset, so the extra gene
-      doesn't move the result -- it's included for correct provenance, not to change the
-      number).
+The SenMayo gene set (published, external reference data, not generated for this
+manuscript) is hardcoded below as SENMAYO_RAW_GENE_STRING -- no separate file needed.
+Sourced directly from Saul et al. 2022 (Nat Commun), Supplementary Data 4, sheet 'human'
+-- 125 genes -- rather than MSigDB's mirror of it, which is missing one gene (CCL3L1).
+Re-run against the real EV table with this 125-gene list: NES=1.441, FDR q=0.0316 --
+unchanged from the 124-gene version and still exactly matching the manuscript's own
+reported NES=1.44 (CCL3L1 isn't among the 29 SenMayo genes detected in this dataset, so
+the extra gene doesn't move the result -- it's included for correct provenance, not to
+change the number).
 """
 
+import re
 import glob
 import pandas as pd
 import numpy as np
@@ -55,11 +53,6 @@ def find_file(patterns, label):
 FILE_GAL = find_file(
     ['EV_Table_5*.xlsx'],
     'senescent GAL-exposure proteomics (Sen Galactose vs Sen High Glucose)')
-GENE_LIST_PATH = find_file(
-    ['SAUL_SEN_MAYO.v2025.1.Hs.tsv'],
-    'SenMayo gene set (published MSigDB reference) '
-    '-- NOT an EV table (external published data), needs to be added as a standalone '
-    'deposited file')
 TARGET_SET     = "SenMayo"
 PERM           = 1000
 SEED           = 42
@@ -73,8 +66,25 @@ COL_ZERO       = "#aaaaaa"
 
 print('Required inputs found:')
 print(f'  FILE_GAL: {FILE_GAL}')
-print(f'  GENE_LIST_PATH: {GENE_LIST_PATH}')
 print()
+
+# ── SenMayo gene set (Saul et al. 2022, Nat Commun, Supplementary Data 4, sheet
+# 'human'; PMID 35974106) -- published, external reference data, hardcoded here
+# instead of a separate bundled file. See verification/PROVENANCE.md. ──────────
+SENMAYO_RAW_GENE_STRING = """
+ACVR1B,ANG,ANGPT1,ANGPTL4,AREG,AXL,BEX3,BMP2,BMP6,C3,CCL1,CCL13,CCL16,CCL2,CCL20,CCL24,
+CCL26,CCL3,CCL3L1,CCL4,CCL5,CCL7,CCL8,CD55,CD9,CSF1,CSF2,CSF2RB,CST4,CTNNB1,CTSB,CXCL1,
+CXCL10,CXCL12,CXCL16,CXCL2,CXCL3,CXCL8,CXCR2,DKK1,EDN1,EGF,EGFR,EREG,ESM1,ETS2,FAS,FGF1,
+FGF2,FGF7,GDF15,GEM,GMFG,HGF,HMGB1,ICAM1,ICAM3,IGF1,IGFBP1,IGFBP2,IGFBP3,IGFBP4,IGFBP5,
+IGFBP6,IGFBP7,IL10,IL13,IL15,IL18,IL1A,IL1B,IL2,IL32,IL6,IL6ST,IL7,INHA,IQGAP2,ITGA2,
+ITPKA,JUN,KITLG,LCP1,MIF,MMP1,MMP10,MMP12,MMP13,MMP14,MMP2,MMP3,MMP9,NAP1L4,NRG1,PAPPA,
+PECAM1,PGF,PIGF,PLAT,PLAU,PLAUR,PTBP1,PTGER2,PTGES,RPS6KA5,SCAMP4,SELPLG,SEMA3F,SERPINB4,
+SERPINE1,SERPINE2,SPP1,SPX,TIMP2,TNF,TNFRSF10C,TNFRSF11B,TNFRSF1A,TNFRSF1B,TUBGCP2,VEGFA,
+VEGFC,VGF,WNT16,WNT2
+"""
+saul_genes = sorted(set(
+    g.strip().upper() for g in re.split(r'[\s,]+', SENMAYO_RAW_GENE_STRING) if g.strip()
+))
 
 # ── LOAD & RANK ───────────────────────────────────────────────────────────────
 # sheet_name=0 (by position) + column-whitespace strip: EV tables in this project
@@ -83,7 +93,6 @@ print()
 # double-space quirk in the real column header.
 df = pd.read_excel(FILE_GAL, sheet_name=0)
 df.columns = df.columns.str.strip()
-gene_list_df = pd.read_csv(GENE_LIST_PATH, sep='\t', index_col=0)
 
 lfc_col = next((c for c in df.columns
                 if "log2fc" in c.lower() and "galactose" in c.lower()), None)
@@ -95,10 +104,6 @@ if lfc_col is None or p_col is None:
         f"Could not find the Log2FC / -Log10 p-value 'galactose' columns in "
         f"{FILE_GAL}. Columns present: {list(df.columns)}"
     )
-
-gene_string = gene_list_df.loc["GENE_SYMBOLS"].values[0]
-saul_genes  = [g.strip().upper()
-               for g in str(gene_string).replace(';', ',').split(',')]
 
 df['rank_metric'] = np.sign(df[lfc_col]) * df[p_col]
 df['Gene_Symbol']  = (df['Gene names']

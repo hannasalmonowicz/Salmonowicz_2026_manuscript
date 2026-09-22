@@ -4,28 +4,18 @@ ANOVA + Bonferroni. This is the exact same figure as before (both panels, one fi
 "abundance" and "aggregation" are the two halves of Figure2B_OrdinaryANOVA_Bonferroni,
 not two separate figures.
 
-Inputs -- two kinds:
-
-(1) EV table:
+Input -- one EV table only:
       EV_Table_2*.xlsx -- 'Gene names', per-replicate Corrected Sol/Insol Pro/Sen,
       and 'log2 FC TOTAL Sen_Pro'.
 
-(2) Not part of any EV table -- built by
-    verification/build_isolated_mito_annotation_from_curated_lists.py from
-    Figure_1_protein_lists_ISOLATED_MITOCHONDRIA.xlsx (a manually curated
-    categorization, the isolated-mito analog of Figure_1_protein_lists_Whole_Cell.xlsx
-    already used by the trajectory script), written to figures/data/:
-      - MitoCarta_pathway_annotation.xlsx -- 'ComplexI'..'ComplexV',
-        'Translation', 'mtDNA_maintenance', 'mtRNA metabolism',
-        'Lipid_metabolism', 'MitoCarta3.0_MitoPathways', by 'Gene names'.
-      - mitoproteome_isolated_mito.txt -- plain-text reference gene list
-        (735 genes, 'Verified_mitoproteome_ISO' in the curated file).
-
-This script's own hardcoded SULFUR / NEAA / ONE_C_CORE / NUCLEOTIDE_CORE gene sets below
-match the curated file's Sulfur_metabolism / NEAA_metabolism / 1C_metabolism /
-Nucleotide_metabolism sheets gene-for-gene. A full run against EV_Table_2 and the curated
-file reproduces the manuscript's reported n=4 for 1C metabolism and n=6 for Sulfur
-metabolism exactly.
+Every gene-category definition below (Complex I-V, mito gene expression, fatty acid
+oxidation, BCAA/sulfur/NEAA/1C/nucleotide metabolism, and the 735-gene mitoproteome
+reference background) is hardcoded as a Python set literal, extracted from a manually
+curated categorization (the isolated-mito analog of the one already used by the
+trajectory script) and cross-checked against the MitoCarta3.0 pathway annotation. See
+verification/PROVENANCE.md for the exact derivation and QC numbers. A full run against
+EV_Table_2 reproduces the manuscript's reported n=4 for 1C metabolism and n=6 for
+Sulfur metabolism exactly.
 """
 import glob
 import warnings
@@ -63,29 +53,200 @@ def find_file(patterns, label):
     )
 
 
+# ── Hardcoded gene sets (curated, cross-checked against MitoCarta3.0; see
+# verification/PROVENANCE.md for derivation) -- no external file needed ──────
+MITOPROTEOME_ISO = {
+    'AADAT', 'AARS2', 'AASS', 'ABAT', 'ABCB10', 'ABCB6', 'ABCB7', 'ABCB8', 'ABCD1', 'ABCD3',
+    'ABHD10', 'ABHD11', 'ACAA1', 'ACAA2', 'ACACA', 'ACAD10', 'ACAD11', 'ACAD8', 'ACAD9',
+    'ACADM', 'ACADS', 'ACADSB', 'ACADVL', 'ACAT1', 'ACLY', 'ACO2', 'ACOT13', 'ACOT7', 'ACOT9',
+    'ACP6', 'ACSF2', 'ACSF3', 'ACSL1', 'ACSS3', 'AFG3L2', 'AGK', 'AGPAT5', 'AHCYL1', 'AIFM1',
+    'AIFM2', 'AK2', 'AK3', 'AK4', 'AKAP1', 'AKAP10', 'AKR7A2', 'ALDH18A1', 'ALDH1B1',
+    'ALDH1L1', 'ALDH1L2', 'ALDH2', 'ALDH3A2', 'ALDH4A1', 'ALDH5A1', 'ALDH6A1', 'ALDH7A1',
+    'ALDH9A1', 'ALKBH1', 'APEX1', 'APOA1BP', 'APOO', 'APOOL', 'ARL2;ARL2-SNX15', 'ARMC10',
+    'ARMCX1', 'ARMCX3', 'ATAD1', 'ATAD3A', 'ATAD3B', 'ATP5A1', 'ATP5B', 'ATP5C1', 'ATP5D',
+    'ATP5E;ATP5EP2', 'ATP5F1', 'ATP5G1;ATP5G3;ATP5G2', 'ATP5H', 'ATP5I', 'ATP5J', 'ATP5J2',
+    'ATP5L', 'ATP5O', 'ATP5S', 'ATP5SL', 'ATPAF1', 'ATPAF2', 'ATPIF1', 'AURKAIP1', 'BAD',
+    'BAK1', 'BAX', 'BCAT2', 'BCKDHA', 'BCKDHB', 'BCKDK', 'BCL2L1', 'BCL2L13', 'BCS1L', 'BID',
+    'BLOC1S1', 'BNIP3', 'BNIP3L', 'BOLA3', 'BPHL', 'C19orf52', 'C1QBP', 'C20orf24', 'C2orf47',
+    'C6orf203', 'CARKD', 'CARS2', 'CAT', 'CBR4', 'CCBL2', 'CCDC109B', 'CCDC51', 'CDK5RAP1',
+    'CHCHD1', 'CHCHD3', 'CHCHD6', 'CISD1', 'CISD3', 'CLPB', 'CLPP', 'CLPX', 'CMC1', 'COA1',
+    'COA3', 'COA4', 'COA6', 'COA7', 'COASY', 'COMT', 'COQ10B', 'COQ3', 'COQ5', 'COQ6', 'COQ7',
+    'COQ9', 'COX11', 'COX15', 'COX18', 'COX19', 'COX20', 'COX4I1', 'COX5A', 'COX5B', 'COX6A1',
+    'COX6B1', 'COX6C', 'COX7A1', 'COX7A2', 'COX7A2L', 'COX7B', 'COX7C', 'CPOX', 'CPT1A',
+    'CPT2', 'CRAT', 'CROT', 'CS', 'CYB5B', 'CYB5R3', 'CYC1', 'CYCS', 'CYP27A1', 'D2HGDH',
+    'DAP3', 'DARS2', 'DBI', 'DBT', 'DCXR', 'DDX28', 'DECR1', 'DHODH', 'DHRS1', 'DHRS4',
+    'DHTKD1', 'DHX30', 'DIABLO', 'DLAT', 'DLD', 'DLST', 'DNAJA3', 'DNAJC11', 'DNAJC15', 'DNLZ',
+    'DNM1L', 'DTYMK', 'DUS2', 'DUT', 'EARS2', 'ECH1', 'ECHDC1', 'ECHS1', 'ECI1;DCI', 'ECI2',
+    'ECSIT', 'EHHADH', 'ELAC2', 'ENDOG', 'ERAL1', 'ETFA', 'ETFB', 'ETFDH', 'ETHE1', 'EXD2',
+    'EXOG', 'FAHD1', 'FAM173A', 'FAM210B', 'FAM213A', 'FARS2', 'FASN', 'FASTKD1', 'FASTKD2',
+    'FASTKD5', 'FDPS', 'FDX1', 'FDX1L', 'FDXR', 'FECH', 'FH', 'FIS1', 'FKBP10', 'FKBP8',
+    'FLAD1', 'FOXRED1', 'FTH1', 'FUNDC1', 'FUNDC2', 'FXN', 'GADD45GIP1', 'GARS', 'GATB;PET112',
+    'GBAS', 'GCAT', 'GCDH', 'GCSH', 'GFER', 'GFM1', 'GFM2', 'GHITM', 'GLRX5', 'GLS',
+    'GLUD1;GLUD2', 'GOT2', 'GPAM', 'GPD2', 'GPT2', 'GPX1', 'GPX4', 'GRHPR', 'GRPEL1', 'GRSF1',
+    'GSR', 'GSTK1', 'GTPBP10', 'GTPBP3', 'GUF1', 'HADH', 'HADHA', 'HADHB', 'HAGH', 'HARS2',
+    'HCCS', 'HEMK1', 'HIBADH', 'HIBCH', 'HIGD1A', 'HIGD2A', 'HINT1', 'HINT2', 'HMGCL',
+    'HSD17B10', 'HSD17B4', 'HSPA9', 'HSPD1', 'HSPE1', 'HTRA2', 'IARS2', 'IBA57', 'ICT1', 'IDE',
+    'IDH2', 'IDH3A', 'IDH3B', 'IDH3G', 'IDI1', 'IMMT', 'ISCA2', 'ISCU', 'IVD', 'KARS',
+    'KIAA0391', 'L2HGDH', 'LACE1', 'LACTB', 'LACTB2', 'LAP3', 'LARS2', 'LDHB', 'LETM1',
+    'LETMD1', 'LIG3', 'LRPPRC', 'LYPLA1', 'LYPLAL1', 'LYRM4', 'LYRM7', 'MACROD1', 'MALSU1',
+    'MAOA', 'MAOB', 'MARC2', 'MARCH5', 'MARS2', 'MAVS', 'MCAT', 'MCCC1', 'MCCC2', 'MCEE',
+    'MCU', 'MDH2', 'ME2', 'ME3', 'MECR', 'METTL15', 'METTL17', 'MFF', 'MFN1', 'MFN2', 'MGARP',
+    'MGME1', 'MGST1', 'MGST3', 'MICU1', 'MICU2', 'MICU3', 'MIEF1', 'MIPEP', 'MLYCD', 'MMAA',
+    'MMAB', 'MOCS1', 'MP68;C14orf2', 'MPC2', 'MPST', 'MPV17', 'MPV17L2', 'MRM1', 'MRPL1',
+    'MRPL10', 'MRPL11', 'MRPL12', 'MRPL13', 'MRPL14', 'MRPL15', 'MRPL16', 'MRPL17', 'MRPL18',
+    'MRPL19', 'MRPL2', 'MRPL20', 'MRPL21', 'MRPL22', 'MRPL23', 'MRPL24', 'MRPL27', 'MRPL28',
+    'MRPL3', 'MRPL30', 'MRPL32', 'MRPL33', 'MRPL34', 'MRPL35', 'MRPL37', 'MRPL38', 'MRPL39',
+    'MRPL4', 'MRPL40', 'MRPL41', 'MRPL42', 'MRPL43', 'MRPL44', 'MRPL46', 'MRPL47', 'MRPL48',
+    'MRPL49', 'MRPL50', 'MRPL51', 'MRPL53', 'MRPL54', 'MRPL55', 'MRPL57', 'MRPL9', 'MRPS10',
+    'MRPS11', 'MRPS12', 'MRPS14', 'MRPS15', 'MRPS16', 'MRPS17;hCG_1984214', 'MRPS18A',
+    'MRPS18B', 'MRPS18C', 'MRPS2', 'MRPS21', 'MRPS22', 'MRPS23', 'MRPS24', 'MRPS25', 'MRPS26',
+    'MRPS27', 'MRPS28', 'MRPS30', 'MRPS31', 'MRPS33', 'MRPS34', 'MRPS35', 'MRPS36', 'MRPS5',
+    'MRPS6', 'MRPS7', 'MRPS9', 'MRRF', 'MSRA', 'MSRB2', 'MSRB3', 'MT-ATP6', 'MT-CO1', 'MT-CO2',
+    'MT-CO3', 'MT-CYB', 'MT-ND1', 'MT-ND2', 'MT-ND4', 'MT-ND5', 'MT-ND6', 'MTCH1', 'MTCH2',
+    'MTERF1', 'MTERF3', 'MTERF4', 'MTFMT', 'MTG1', 'MTHFD2', 'MTIF2', 'MTIF3', 'MTO1', 'MTPAP',
+    'MTRF1L', 'MTX1', 'MTX2', 'MTX3', 'MUL1', 'MUT', 'MYO19', 'NADK2', 'NARS2', 'NBR1',
+    'NDUFA1', 'NDUFA10', 'NDUFA11', 'NDUFA12', 'NDUFA13', 'NDUFA2', 'NDUFA3', 'NDUFA4',
+    'NDUFA5', 'NDUFA6', 'NDUFA7', 'NDUFA8', 'NDUFA9', 'NDUFAB1', 'NDUFAF1', 'NDUFAF2',
+    'NDUFAF3', 'NDUFAF4', 'NDUFAF5', 'NDUFAF7', 'NDUFB1', 'NDUFB10', 'NDUFB11', 'NDUFB3',
+    'NDUFB4', 'NDUFB5', 'NDUFB6', 'NDUFB7', 'NDUFB8', 'NDUFB9', 'NDUFC2;KCTD14;NDUFC2-KCTD14',
+    'NDUFS1', 'NDUFS2', 'NDUFS3', 'NDUFS4', 'NDUFS5', 'NDUFS6', 'NDUFS7', 'NDUFS8', 'NDUFV1',
+    'NDUFV2', 'NDUFV3', 'NFS1', 'NFU1', 'NIPSNAP1', 'NIT2', 'NLN', 'NLRX1', 'NME3', 'NME4',
+    'NNT', 'NOA1', 'NRD1', 'NSUN2', 'NSUN4', 'NT5DC2', 'NUBPL', 'NUDT19', 'NUDT5', 'NUDT9',
+    'OAT', 'OCIAD2', 'OGDH', 'OPA1', 'OSBPL1A', 'OSGEPL1', 'OXA1L', 'OXCT1', 'OXSM', 'PAICS',
+    'PAM16;CORO7-PAM16', 'PARK7', 'PARL', 'PARS2', 'PC', 'PCBD2', 'PCCA', 'PCCB', 'PCK2',
+    'PDE12', 'PDF', 'PDHA1', 'PDHB', 'PDHX', 'PDK1', 'PDK2', 'PDP1', 'PDPR', 'PDSS2', 'PEO1',
+    'PET100', 'PGAM5', 'PGS1', 'PHB', 'PHB2', 'PISD', 'PITRM1', 'PLSCR3;TMEM256-PLSCR3',
+    'PMPCA', 'PMPCB', 'PNKD', 'PNPLA8', 'PNPO', 'PNPT1', 'POLDIP2', 'POLG', 'POLG2', 'POLRMT',
+    'PPA2', 'PPIF', 'PPOX', 'PRDX2', 'PRDX3', 'PRDX4', 'PRDX5', 'PRDX6', 'PRKACA;KIN27',
+    'PROSC', 'PTCD3', 'PTGES2', 'PTPMT1', 'PUS1', 'PUSL1', 'PYCR1', 'PYCR2', 'QDPR',
+    'QIL1;C19orf70', 'QRSL1', 'RAB24', 'RARS2', 'RBFA', 'RDH13', 'RDH14', 'REXO2', 'RHOT1',
+    'RHOT2', 'RMDN3', 'RMND1', 'RNASEH1', 'RNMTL1', 'RPUSD4', 'RSAD1', 'SAMM50', 'SARS2',
+    'SCO1', 'SCO2', 'SCP2', 'SDHA', 'SDHAF2', 'SDHB', 'SDHC', 'SDHD', 'SELO', 'SFXN1', 'SFXN3',
+    'SHMT2', 'SIRT5', 'SLC25A1', 'SLC25A10', 'SLC25A11', 'SLC25A12', 'SLC25A13', 'SLC25A15',
+    'SLC25A16', 'SLC25A19', 'SLC25A20', 'SLC25A21', 'SLC25A22', 'SLC25A23', 'SLC25A24',
+    'SLC25A25', 'SLC25A26', 'SLC25A29', 'SLC25A3', 'SLC25A30', 'SLC25A32', 'SLC25A4',
+    'SLC25A42', 'SLC25A46', 'SLC25A5', 'SLC25A51', 'SLC25A6', 'SLC30A9', 'SLIRP', 'SMDT1',
+    'SNAP29', 'SOD1', 'SOD2', 'SPG7', 'SPIRE1', 'SPR', 'SPTLC2', 'SQRDL', 'SSBP1', 'STARD7',
+    'STOML2', 'SUCLA2', 'SUCLG1', 'SUCLG2', 'SUGCT', 'SUOX', 'SUPV3L1', 'SURF1', 'SYNJ2BP',
+    'TACO1', 'TAMM41', 'TARS2', 'TAZ', 'TBRG4', 'TEFM', 'TFAM', 'TFB1M', 'TFB2M', 'THEM4',
+    'TIMM10', 'TIMM13', 'TIMM17A', 'TIMM17B', 'TIMM21', 'TIMM22', 'TIMM23', 'TIMM44', 'TIMM50',
+    'TIMM8A', 'TIMM9', 'TIMMDC1', 'TK2', 'TMEM11', 'TMEM126A', 'TMEM70', 'TMLHE', 'TOMM20',
+    'TOMM22', 'TOMM34', 'TOMM40', 'TOMM40L', 'TOMM7', 'TOMM70A', 'TRAP1', 'TRMT10C', 'TRMT2B',
+    'TRMT5', 'TRMT61B', 'TRMU', 'TRNT1', 'TSFM', 'TST', 'TTC19', 'TUFM', 'TXN2', 'TXNRD1',
+    'TXNRD2', 'UNG', 'UQCC1', 'UQCC2', 'UQCR10', 'UQCR11', 'UQCRB', 'UQCRC1', 'UQCRC2',
+    'UQCRFS1;UQCRFS1P1', 'UQCRH;UQCRHL', 'UQCRQ', 'USMG5', 'VARS2', 'VDAC1', 'VDAC2', 'VDAC3',
+    'WARS2', 'WBSCR16', 'XPNPEP3', 'YARS2', 'YME1L1', 'ZADH2'
+}  # n=735
+
+MITO_GE_GENES = {
+    'AARS2', 'ALKBH1', 'ANGEL2', 'APEX1', 'ATAD3A', 'ATAD3B', 'AURKAIP1', 'CARS2', 'CDK5RAP1',
+    'CHCHD1', 'COA3', 'COX14', 'DAP3', 'DARS2', 'DDX28', 'DHX30', 'DNA2', 'DUS2', 'EARS2',
+    'ELAC2', 'ENDOG', 'ERAL1', 'EXD2', 'EXOG', 'FARS2', 'FASTK', 'FASTKD1', 'FASTKD2',
+    'FASTKD3', 'FASTKD5', 'GADD45GIP1', 'GARS1', 'GATB', 'GATC', 'GFM1', 'GFM2', 'GRSF1',
+    'GTPBP10', 'GTPBP3', 'GUF1', 'HARS2', 'HEMK1', 'HSD17B10', 'IARS2', 'KARS1', 'KGD4',
+    'LACTB2', 'LARS2', 'LIG3', 'LRPPRC', 'MALSU1', 'MARS2', 'METAP1D', 'METTL15', 'METTL17',
+    'METTL5', 'METTL8', 'MGME1', 'MIEF1', 'MPV17L2', 'MRM1', 'MRM2', 'MRM3', 'MRPL1', 'MRPL10',
+    'MRPL11', 'MRPL12', 'MRPL13', 'MRPL14', 'MRPL15', 'MRPL16', 'MRPL17', 'MRPL18', 'MRPL19',
+    'MRPL2', 'MRPL20', 'MRPL21', 'MRPL22', 'MRPL23', 'MRPL24', 'MRPL27', 'MRPL28', 'MRPL3',
+    'MRPL30', 'MRPL32', 'MRPL33', 'MRPL34', 'MRPL35', 'MRPL36', 'MRPL37', 'MRPL38', 'MRPL39',
+    'MRPL4', 'MRPL40', 'MRPL41', 'MRPL42', 'MRPL43', 'MRPL44', 'MRPL46', 'MRPL47', 'MRPL48',
+    'MRPL49', 'MRPL50', 'MRPL51', 'MRPL52', 'MRPL53', 'MRPL54', 'MRPL55', 'MRPL57', 'MRPL58',
+    'MRPL9', 'MRPS10', 'MRPS11', 'MRPS12', 'MRPS14', 'MRPS15', 'MRPS16', 'MRPS17', 'MRPS18A',
+    'MRPS18B', 'MRPS18C', 'MRPS2', 'MRPS21', 'MRPS22', 'MRPS23', 'MRPS24', 'MRPS25', 'MRPS26',
+    'MRPS27', 'MRPS28', 'MRPS30', 'MRPS31', 'MRPS33', 'MRPS34', 'MRPS35', 'MRPS5', 'MRPS6',
+    'MRPS7', 'MRPS9', 'MRRF', 'MTERF3', 'MTERF4', 'MTFMT', 'MTG1', 'MTG2', 'MTIF2', 'MTIF3',
+    'MTO1', 'MTPAP', 'MTRES1', 'MTRF1', 'MTRF1L', 'MUTYH', 'NARS2', 'NGRN', 'NOA1', 'NSUN2',
+    'NSUN4', 'OGG1', 'OSGEPL1', 'OXA1L', 'PARS2', 'PDE12', 'PDF', 'PIF1', 'PNPT1', 'POLB',
+    'POLDIP2', 'POLG', 'POLG2', 'POLQ', 'POLRMT', 'PPA2', 'PRORP', 'PTCD1', 'PTCD2', 'PTCD3',
+    'PUS1', 'PUSL1', 'QRSL1', 'QTRT1', 'RARS2', 'RBFA', 'RCC1L', 'RECQL4', 'REXO2', 'RMND1',
+    'RNASEH1', 'RPUSD3', 'RPUSD4', 'SARS2', 'SLIRP', 'SSBP1', 'SUPV3L1', 'TACO1', 'TARS2',
+    'TBRG4', 'TEFM', 'TFAM', 'TFB1M', 'TFB2M', 'THG1L', 'TIMM21', 'TOP3A', 'TRIT1', 'TRMT1',
+    'TRMT10C', 'TRMT2B', 'TRMT5', 'TRMT61B', 'TRMU', 'TRNT1', 'TRUB2', 'TSFM', 'TUFM', 'TWNK',
+    'UNG', 'VARS2', 'WARS2', 'YARS2', 'YBEY', 'YRDC'
+}  # n=222
+
+COMPLEXI_GENES = {
+    'ACAD9', 'AIFM1', 'ATP5SL', 'COA1', 'ECSIT', 'FOXRED1', 'MT-ND1', 'MT-ND2', 'MT-ND4',
+    'MT-ND5', 'MT-ND6', 'NDUFA1', 'NDUFA10', 'NDUFA11', 'NDUFA12', 'NDUFA13', 'NDUFA2',
+    'NDUFA3', 'NDUFA5', 'NDUFA6', 'NDUFA7', 'NDUFA8', 'NDUFA9', 'NDUFAB1', 'NDUFAF1',
+    'NDUFAF2', 'NDUFAF3', 'NDUFAF4', 'NDUFAF5', 'NDUFAF7', 'NDUFB1', 'NDUFB10', 'NDUFB11',
+    'NDUFB3', 'NDUFB4', 'NDUFB5', 'NDUFB6', 'NDUFB7', 'NDUFB8', 'NDUFB9',
+    'NDUFC2;KCTD14;NDUFC2-KCTD14', 'NDUFS1', 'NDUFS2', 'NDUFS3', 'NDUFS4', 'NDUFS5', 'NDUFS6',
+    'NDUFS7', 'NDUFS8', 'NDUFV1', 'NDUFV2', 'NDUFV3', 'NUBPL', 'TIMMDC1', 'TMEM126A', 'TMEM70'
+}  # n=56
+
+COMPLEXII_GENES = {
+    'SDHA', 'SDHAF2', 'SDHB', 'SDHC', 'SDHD'
+}  # n=5
+
+COMPLEXIII_GENES = {
+    'BCS1L', 'CYC1', 'LYRM7', 'MT-CYB', 'TTC19', 'UQCC1', 'UQCC2', 'UQCR10', 'UQCR11', 'UQCRB',
+    'UQCRC1', 'UQCRC2', 'UQCRFS1;UQCRFS1P1', 'UQCRH;UQCRHL', 'UQCRQ'
+}  # n=15
+
+COMPLEXIV_GENES = {
+    'CMC1', 'COA1', 'COA3', 'COA4', 'COA6', 'COA7', 'COX11', 'COX15', 'COX18', 'COX19',
+    'COX20', 'COX4I1', 'COX5A', 'COX5B', 'COX6A1', 'COX6B1', 'COX6C', 'COX7A1', 'COX7A2',
+    'COX7A2L', 'COX7B', 'COX7C', 'HIGD1A', 'MT-CO1', 'MT-CO2', 'MT-CO3', 'NDUFA4', 'PET100',
+    'SCO1', 'SCO2', 'SURF1', 'TACO1', 'TIMM21'
+}  # n=33
+
+COMPLEXV_GENES = {
+    'ATP5A1', 'ATP5B', 'ATP5C1', 'ATP5D', 'ATP5E;ATP5EP2', 'ATP5F1', 'ATP5G1;ATP5G3;ATP5G2',
+    'ATP5H', 'ATP5I', 'ATP5J', 'ATP5J2', 'ATP5L', 'ATP5O', 'ATP5S', 'ATPAF1', 'ATPAF2',
+    'ATPIF1', 'MP68;C14orf2', 'MT-ATP6', 'TMEM70', 'USMG5'
+}  # n=21
+
+FAO_ISO_GENES = {
+    'ACAA1', 'ACAA2', 'ACACA', 'ACAD10', 'ACAD11', 'ACADM', 'ACADS', 'ACADSB', 'ACADVL',
+    'ACAT1', 'ACOT13', 'ACOT7', 'ACOT9', 'ACP6', 'ACSF2', 'ACSF3', 'ACSL1', 'ACSS3', 'AGK',
+    'AGPAT5', 'CBR4', 'CPT1A', 'CPT2', 'CRAT', 'CROT', 'CYB5R3', 'CYP27A1', 'DBI', 'DECR1',
+    'DHRS1', 'ECH1', 'ECHDC1', 'ECHS1', 'ECI1;DCI', 'ECI2', 'EHHADH', 'ETFA', 'ETFB', 'ETFDH',
+    'FASN', 'FDPS', 'FDX1', 'FDXR', 'GCSH', 'GPAM', 'HADH', 'HADHA', 'HADHB', 'HINT2',
+    'HSD17B10', 'HSD17B4', 'IDI1', 'LACTB', 'LYPLA1', 'LYPLAL1', 'MCAT', 'MCEE', 'MECR',
+    'MGST3', 'MLYCD', 'MUT', 'NDUFAB1', 'OSBPL1A', 'OXSM', 'PCCA', 'PCCB', 'PGS1', 'PISD',
+    'PLSCR3;TMEM256-PLSCR3', 'PNPLA8', 'PRDX6', 'PTGES2', 'PTPMT1', 'SCP2', 'SLC25A1',
+    'SLC25A20', 'SPTLC2', 'STARD7', 'TAMM41', 'TAZ', 'THEM4', 'ZADH2'
+}  # n=82
+
+MITO_GE_ISO_GENES = {
+    'AARS2', 'ALKBH1', 'APEX1', 'ATAD3A', 'ATAD3B', 'AURKAIP1', 'C6orf203', 'CARS2',
+    'CDK5RAP1', 'CHCHD1', 'COA3', 'DAP3', 'DARS2', 'DDX28', 'DHX30', 'DUS2', 'EARS2', 'ELAC2',
+    'ENDOG', 'ERAL1', 'EXD2', 'EXOG', 'FARS2', 'FASTKD1', 'FASTKD2', 'FASTKD5', 'GADD45GIP1',
+    'GARS', 'GATB;PET112', 'GFM1', 'GFM2', 'GRSF1', 'GTPBP10', 'GTPBP3', 'GUF1', 'HARS2',
+    'HEMK1', 'HSD17B10', 'IARS2', 'ICT1', 'KARS', 'KIAA0391', 'LACTB2', 'LARS2', 'LIG3',
+    'LRPPRC', 'MALSU1', 'MARS2', 'METTL15', 'METTL17', 'MGME1', 'MIEF1', 'MPV17L2', 'MRM1',
+    'MRPL1', 'MRPL10', 'MRPL11', 'MRPL12', 'MRPL13', 'MRPL14', 'MRPL15', 'MRPL16', 'MRPL17',
+    'MRPL18', 'MRPL19', 'MRPL2', 'MRPL20', 'MRPL21', 'MRPL22', 'MRPL23', 'MRPL24', 'MRPL27',
+    'MRPL28', 'MRPL3', 'MRPL30', 'MRPL32', 'MRPL33', 'MRPL34', 'MRPL35', 'MRPL37', 'MRPL38',
+    'MRPL39', 'MRPL4', 'MRPL40', 'MRPL41', 'MRPL42', 'MRPL43', 'MRPL44', 'MRPL46', 'MRPL47',
+    'MRPL48', 'MRPL49', 'MRPL50', 'MRPL51', 'MRPL53', 'MRPL54', 'MRPL55', 'MRPL57', 'MRPL9',
+    'MRPS10', 'MRPS11', 'MRPS12', 'MRPS14', 'MRPS15', 'MRPS16', 'MRPS17;hCG_1984214',
+    'MRPS18A', 'MRPS18B', 'MRPS18C', 'MRPS2', 'MRPS21', 'MRPS22', 'MRPS23', 'MRPS24', 'MRPS25',
+    'MRPS26', 'MRPS27', 'MRPS28', 'MRPS30', 'MRPS31', 'MRPS33', 'MRPS34', 'MRPS35', 'MRPS36',
+    'MRPS5', 'MRPS6', 'MRPS7', 'MRPS9', 'MRRF', 'MTERF1', 'MTERF3', 'MTERF4', 'MTFMT', 'MTG1',
+    'MTIF2', 'MTIF3', 'MTO1', 'MTPAP', 'MTRF1L', 'NARS2', 'NOA1', 'NSUN2', 'NSUN4', 'OSGEPL1',
+    'OXA1L', 'PARS2', 'PDE12', 'PDF', 'PEO1', 'PNPT1', 'POLDIP2', 'POLG', 'POLG2', 'POLRMT',
+    'PPA2', 'PTCD3', 'PUS1', 'PUSL1', 'QRSL1', 'RARS2', 'RBFA', 'REXO2', 'RMND1', 'RNASEH1',
+    'RNMTL1', 'RPUSD4', 'SARS2', 'SLIRP', 'SSBP1', 'SUPV3L1', 'TACO1', 'TARS2', 'TBRG4',
+    'TEFM', 'TFAM', 'TFB1M', 'TFB2M', 'TIMM21', 'TRMT10C', 'TRMT2B', 'TRMT5', 'TRMT61B',
+    'TRMU', 'TRNT1', 'TSFM', 'TUFM', 'UNG', 'VARS2', 'WARS2', 'WBSCR16', 'YARS2'
+}  # n=191
+
+BCAA_ISO_GENES = {
+    'ACAD8', 'ACADSB', 'ACAT1', 'ALDH6A1', 'BCAT2', 'BCKDHA', 'BCKDHB', 'BCKDK', 'DBT', 'DLD',
+    'ECHS1', 'ETFA', 'ETFB', 'ETFDH', 'HADHA', 'HIBADH', 'HIBCH', 'HMGCL', 'HSD17B10', 'IVD',
+    'MCCC1', 'MCCC2'
+}  # n=22
+
+
 # ---- EV table ----
 ISO_MITO_DATA_PATH = find_file(
     ['EV_Table_2*.xlsx'],
     'isolated-mito TMT solubility/aggregation data')
 
-# ---- not EV tables -- built by verification/build_isolated_mito_annotation_from_curated_lists.py ----
-ISO_MITO_ANNOT_PATH = find_file(
-    ['MitoCarta_pathway_annotation*.xlsx', 'Data_processed_HS_Soluble_Insoluble*.xlsx',
-     'Annotations_MitoCarta*.xlsx', 'Isolated_mito_MitoCarta_annotations*.xlsx'],
-    "MitoCarta pathway/complex annotation for the isolated-mito gene set (needs "
-    "columns: 'Gene names', 'ComplexI'..'ComplexV', 'Translation', 'mtDNA_maintenance', "
-    "'mtRNA metabolism', 'Lipid_metabolism', 'MitoCarta3.0_MitoPathways') "
-    "-- not an EV table, needs to be added as a standalone deposited file")
-MITOPROTEOME_ISO_FILE = find_file(
-    ['mitoproteome_isolated_mito.txt'],
-    'isolated-mito reference gene list (plain text) '
-    '-- not an EV table, needs to be added as a standalone deposited file')
-
 print('Required inputs found:')
-for _label, _path in [('ISO_MITO_DATA_PATH', ISO_MITO_DATA_PATH),
-                       ('ISO_MITO_ANNOT_PATH', ISO_MITO_ANNOT_PATH),
-                       ('MITOPROTEOME_ISO_FILE', MITOPROTEOME_ISO_FILE)]:
-    print(f'  {_label}: {_path}')
+print(f'  ISO_MITO_DATA_PATH: {ISO_MITO_DATA_PATH}')
 print()
 
 # ── Load data ─────────────────────────────────────────────────────────────────
@@ -95,42 +256,10 @@ print()
 data_df = pd.read_excel(ISO_MITO_DATA_PATH, sheet_name=0)
 data_df.columns = data_df.columns.str.strip()
 
-mcm = 'MitoCarta3.0_MitoPathways'
 FCm = 'log2 FC TOTAL Sen_Pro'
-ANNOT_COLS = ['ComplexI', 'ComplexII', 'ComplexIII', 'ComplexIV', 'ComplexV',
-              'Translation', 'mtDNA_maintenance', 'mtRNA metabolism',
-              'Lipid_metabolism', mcm]
+dfm = data_df.copy()
 
-# ISO_MITO_ANNOT_PATH can have multiple sheets, and the one we need isn't necessarily
-# sheet 0. Rather than assume a position or a hardcoded name, scan every sheet and use
-# the first one that actually has 'Gene names' plus all the required annotation columns.
-_annot_xl = pd.ExcelFile(ISO_MITO_ANNOT_PATH)
-annot_df = None
-_annot_sheet_used = None
-for _sheet in _annot_xl.sheet_names:
-    _d = pd.read_excel(ISO_MITO_ANNOT_PATH, sheet_name=_sheet)
-    # str(c) guards against sheets with no real header (integer column names), which
-    # a junk/summary sheet elsewhere in the same workbook can have.
-    _d.columns = [str(c).strip() for c in _d.columns]
-    if 'Gene names' in _d.columns and all(c in _d.columns for c in ANNOT_COLS):
-        annot_df = _d
-        _annot_sheet_used = _sheet
-        break
-
-if annot_df is None:
-    raise KeyError(
-        f"None of the sheets in {ISO_MITO_ANNOT_PATH} ({_annot_xl.sheet_names}) have "
-        f"'Gene names' plus all of {ANNOT_COLS}. Check the filename/sheet -- this needs "
-        "to be the sheet with the MitoCarta pathway/complex annotation columns, "
-        "not the raw solubility/aggregation data sheet."
-    )
-print(f'Using annotation sheet: {_annot_sheet_used!r} from {ISO_MITO_ANNOT_PATH}')
-
-# Merge the EV-table data with the (still non-EV-table) MitoCarta annotation, by gene.
-dfm = data_df.merge(annot_df[['Gene names'] + ANNOT_COLS], on='Gene names', how='left')
-
-with open(MITOPROTEOME_ISO_FILE) as f:
-  MITO_ISO = set(f.read().split())
+MITO_ISO = MITOPROTEOME_ISO
 
 detected_iso = set(dfm['Gene names'].dropna())
 ref_genes = MITO_ISO & detected_iso
@@ -143,10 +272,6 @@ dfm['FC_rel'] = dfm[FCm] - ref_median
 # ── Gene sets ─────────────────────────────────────────────────────────────────
 def relg(genes):
   return dfm[dfm['Gene names'].isin(genes)]['FC_rel'].dropna().values
-
-
-def relcol(col):
-  return dfm[dfm[col] == 1]['FC_rel'].dropna().values
 
 
 SULFUR = {'ETHE1', 'GOT2', 'MPST', 'MSRA', 'SQRDL', 'TST'}
@@ -196,15 +321,14 @@ NUCLEOTIDE_CORE = {
     'SUCLG2',
     'TK2',
 }
-mito_ge_m = (
-    set(dfm[dfm['Translation'] == 1]['Gene names'])
-    | set(dfm[dfm['mtDNA_maintenance'] == 1]['Gene names'])
-    | set(dfm[dfm['mtRNA metabolism'] == 1]['Gene names'])
-)
-bcaa_m = set(
-    dfm[dfm[mcm].str.contains('Branched-chain', na=False)]['Gene names']
-)
-fao_m = set(dfm[dfm['Lipid_metabolism'] == 1]['Gene names'])
+ci_m = COMPLEXI_GENES & detected_iso
+cii_m = COMPLEXII_GENES & detected_iso
+ciii_m = COMPLEXIII_GENES & detected_iso
+civ_m = COMPLEXIV_GENES & detected_iso
+cv_m = COMPLEXV_GENES & detected_iso
+mito_ge_m = MITO_GE_ISO_GENES & detected_iso
+bcaa_m = BCAA_ISO_GENES & detected_iso
+fao_m = FAO_ISO_GENES & detected_iso
 sulf_m = SULFUR & detected_iso
 neaa_m = NEAA & detected_iso
 onec_m = ONE_C_CORE & detected_iso
@@ -219,36 +343,11 @@ SUB_COLOR = {
 }
 
 RAW_CATS = [
-    (
-        'Complex I',
-        relcol('ComplexI'),
-        set(dfm[dfm['ComplexI'] == 1]['Gene names']),
-        SUB_COLOR['CI'],
-    ),
-    (
-        'Complex II',
-        relcol('ComplexII'),
-        set(dfm[dfm['ComplexII'] == 1]['Gene names']),
-        SUB_COLOR['CII'],
-    ),
-    (
-        'Complex III',
-        relcol('ComplexIII'),
-        set(dfm[dfm['ComplexIII'] == 1]['Gene names']),
-        SUB_COLOR['CIII'],
-    ),
-    (
-        'Complex IV',
-        relcol('ComplexIV'),
-        set(dfm[dfm['ComplexIV'] == 1]['Gene names']),
-        SUB_COLOR['CIV'],
-    ),
-    (
-        'Complex V',
-        relcol('ComplexV'),
-        set(dfm[dfm['ComplexV'] == 1]['Gene names']),
-        SUB_COLOR['CV'],
-    ),
+    ('Complex I', relg(ci_m), ci_m, SUB_COLOR['CI']),
+    ('Complex II', relg(cii_m), cii_m, SUB_COLOR['CII']),
+    ('Complex III', relg(ciii_m), ciii_m, SUB_COLOR['CIII']),
+    ('Complex IV', relg(civ_m), civ_m, SUB_COLOR['CIV']),
+    ('Complex V', relg(cv_m), cv_m, SUB_COLOR['CV']),
     (
         'Mito gene expression',
         relg(mito_ge_m),

@@ -3,22 +3,22 @@
 Fig 1H -- generality-summary figure, single self-contained script (no intermediate
 cache files).
 
-Inputs -- two kinds (same split as the EV1O correlation script and Fig 1G matrix script):
+Inputs:
 
 (1) EV tables:
-      EV_Table_8*.xlsx   -- MRC5 CAM/IMT proteomics
+      EV_Table_8*.xlsx   -- MRC5 proteomics
       EV_Table_10*.xlsx  -- 30-model TIS meta-analysis (Anerillas)
 
-(2) Not part of any EV table -- annotation / category-definition files, must be bundled
-    as their own standalone files in the deposit:
-      Supplementary_PanelE_Data_1.xlsx
-      analMito_Anerillas2026.xlsx
-      analMito_Payea2024.xlsx
+(2) Bundled in figures/data/, not an EV table:
+      Payea2024_IMR90_etoposide.xlsx -- Payea et al. 2024 published dataset,
+                                         trimmed to the columns this script uses
 
-Note (same as EV1O and Fig 1G): EV_Table_8 has no 'MC3.0 Mito Pathways' column of its
-own, so the Mito_gene_expression category for MRC5 reuses the MitoCarta3.0 annotation
-loaded from analMito_Anerillas2026.xlsx instead (the same universal gene -> pathway
-mapping used for the other models, not model-specific).
+Pathway gene lists (OXPHOS subunits, fatty acid oxidation, BCAA, NEAA, sulfur
+metabolism, methionine metabolism, 1C/folate) and MITO_GE_GENES (gene symbols
+annotated to the MitoCarta3.0 "Translation / mtDNA maintenance / mtRNA metabolism"
+pathways, used for the Mito_gene_expression category) are fixed reference sets,
+hardcoded directly below rather than read from a separate file. See
+verification/PROVENANCE.md.
 
 Output:
   Generality_summary.png, Generality_summary.svg, generality_summary_table.csv
@@ -38,7 +38,6 @@ statistical footing as everything else in the figure.
 """
 import glob
 import os
-import re
 import textwrap
 import numpy as np
 import pandas as pd
@@ -63,35 +62,46 @@ def find_file(patterns, label):
 
 
 # ---- EV tables ----
-CAM_IMT_PATH = find_file(
-    ['EV_Table_8*.xlsx'],
-    'MRC5 CAM/IMT proteomics (Sen CTRL vs Prolif CTRL)')
-ANERILLAS_PATH = find_file(
-    ['EV_Table_10*.xlsx'],
-    '30-model TIS meta-analysis (Anerillas)')
+EV_TABLE_8_PATH = find_file(['EV_Table_8*.xlsx'], 'EV Table 8')
+ANERILLAS_PATH = find_file(['EV_Table_10*.xlsx'], '30-model TIS meta-analysis (Anerillas)')
 
-# ---- (2) annotation / category-definition files -- NOT EV tables, must be added ---
-PANELE_PATH = find_file(
-    ['Supplementary_PanelE_Data_1.xlsx'],
-    'canonical per-pathway gene lists -- NOT an EV table, needs to be added as a '
-    'standalone deposited file')
-ANERILLAS_MITOCARTA_PATH = find_file(
-    ['analMito_Anerillas2026.xlsx'],
-    'MitoCarta3.0 pathway annotations for the 30-model gene universe '
-    '-- NOT an EV table, needs to be added as a standalone deposited file')
-PAYEA_PATH = find_file(
-    ['analMito_Payea2024.xlsx'],
-    'Payea et al. 2024 IMR90 (etoposide) published dataset '
-    '-- NOT an EV table (external published data), needs to be added as a standalone '
-    'deposited file')
+# ---- bundled reference files (figures/data/) ----
+PAYEA_PATH = find_file(['Payea2024_IMR90_etoposide.xlsx'], 'Payea et al. 2024 dataset')
 
-print('All 5 required inputs found:')
-for _label, _path in [('CAM_IMT_PATH', CAM_IMT_PATH), ('ANERILLAS_PATH', ANERILLAS_PATH),
-                       ('PANELE_PATH', PANELE_PATH),
-                       ('ANERILLAS_MITOCARTA_PATH', ANERILLAS_MITOCARTA_PATH),
+print('All required inputs found:')
+for _label, _path in [('EV_TABLE_8_PATH', EV_TABLE_8_PATH), ('ANERILLAS_PATH', ANERILLAS_PATH),
                        ('PAYEA_PATH', PAYEA_PATH)]:
     print(f'  {_label}: {_path}')
 print()
+
+# Hardcoded (curated, cross-checked against MitoCarta3.0; see
+# verification/PROVENANCE.md for derivation) -- no external file needed.
+MITO_GE_GENES = {
+    'AARS2', 'ALKBH1', 'ANGEL2', 'APEX1', 'ATAD3A', 'ATAD3B', 'AURKAIP1', 'CARS2', 'CDK5RAP1',
+    'CHCHD1', 'COA3', 'COX14', 'DAP3', 'DARS2', 'DDX28', 'DHX30', 'DNA2', 'DUS2', 'EARS2',
+    'ELAC2', 'ENDOG', 'ERAL1', 'EXD2', 'EXOG', 'FARS2', 'FASTK', 'FASTKD1', 'FASTKD2',
+    'FASTKD3', 'FASTKD5', 'GADD45GIP1', 'GARS1', 'GATB', 'GATC', 'GFM1', 'GFM2', 'GRSF1',
+    'GTPBP10', 'GTPBP3', 'GUF1', 'HARS2', 'HEMK1', 'HSD17B10', 'IARS2', 'KARS1', 'KGD4',
+    'LACTB2', 'LARS2', 'LIG3', 'LRPPRC', 'MALSU1', 'MARS2', 'METAP1D', 'METTL15', 'METTL17',
+    'METTL5', 'METTL8', 'MGME1', 'MIEF1', 'MPV17L2', 'MRM1', 'MRM2', 'MRM3', 'MRPL1', 'MRPL10',
+    'MRPL11', 'MRPL12', 'MRPL13', 'MRPL14', 'MRPL15', 'MRPL16', 'MRPL17', 'MRPL18', 'MRPL19',
+    'MRPL2', 'MRPL20', 'MRPL21', 'MRPL22', 'MRPL23', 'MRPL24', 'MRPL27', 'MRPL28', 'MRPL3',
+    'MRPL30', 'MRPL32', 'MRPL33', 'MRPL34', 'MRPL35', 'MRPL36', 'MRPL37', 'MRPL38', 'MRPL39',
+    'MRPL4', 'MRPL40', 'MRPL41', 'MRPL42', 'MRPL43', 'MRPL44', 'MRPL46', 'MRPL47', 'MRPL48',
+    'MRPL49', 'MRPL50', 'MRPL51', 'MRPL52', 'MRPL53', 'MRPL54', 'MRPL55', 'MRPL57', 'MRPL58',
+    'MRPL9', 'MRPS10', 'MRPS11', 'MRPS12', 'MRPS14', 'MRPS15', 'MRPS16', 'MRPS17', 'MRPS18A',
+    'MRPS18B', 'MRPS18C', 'MRPS2', 'MRPS21', 'MRPS22', 'MRPS23', 'MRPS24', 'MRPS25', 'MRPS26',
+    'MRPS27', 'MRPS28', 'MRPS30', 'MRPS31', 'MRPS33', 'MRPS34', 'MRPS35', 'MRPS5', 'MRPS6',
+    'MRPS7', 'MRPS9', 'MRRF', 'MTERF3', 'MTERF4', 'MTFMT', 'MTG1', 'MTG2', 'MTIF2', 'MTIF3',
+    'MTO1', 'MTPAP', 'MTRES1', 'MTRF1', 'MTRF1L', 'MUTYH', 'NARS2', 'NGRN', 'NOA1', 'NSUN2',
+    'NSUN4', 'OGG1', 'OSGEPL1', 'OXA1L', 'PARS2', 'PDE12', 'PDF', 'PIF1', 'PNPT1', 'POLB',
+    'POLDIP2', 'POLG', 'POLG2', 'POLQ', 'POLRMT', 'PPA2', 'PRORP', 'PTCD1', 'PTCD2', 'PTCD3',
+    'PUS1', 'PUSL1', 'QRSL1', 'QTRT1', 'RARS2', 'RBFA', 'RCC1L', 'RECQL4', 'REXO2', 'RMND1',
+    'RNASEH1', 'RPUSD3', 'RPUSD4', 'SARS2', 'SLIRP', 'SSBP1', 'SUPV3L1', 'TACO1', 'TARS2',
+    'TBRG4', 'TEFM', 'TFAM', 'TFB1M', 'TFB2M', 'THG1L', 'TIMM21', 'TOP3A', 'TRIT1', 'TRMT1',
+    'TRMT10C', 'TRMT2B', 'TRMT5', 'TRMT61B', 'TRMU', 'TRNT1', 'TRUB2', 'TSFM', 'TUFM', 'TWNK',
+    'UNG', 'VARS2', 'WARS2', 'YARS2', 'YBEY', 'YRDC'
+}  # n=222
 
 # ============================================================== 1. build gene-level data
 RENAME = {
@@ -102,15 +112,6 @@ RENAME = {
     'SQRDL': 'SQOR',
 }
 
-ONEC_FOLATE_GENES = ['ALDH1L1', 'MTHFD1', 'MTHFR', 'SHMT1', 'DHFR', 'TYMS',
-                      'MTHFD1L', 'MTHFD2', 'ALDH1L2', 'SHMT2', 'GART', 'ATIC']
-
-CATS_SIMPLE = ['OXPHOS_subunits', 'Fatty_acid_oxidation', 'BCAA_metabolism',
-               'NEAA_metabolism', 'Sulfur_metabolism', 'Methionine_metabolism_GOBP']
-
-MITO_GE_PATTERN = re.compile(
-    r'Mitochondrial central dogma > (?:Translation|mtDNA maintenance|mtRNA metabolism)')
-
 
 def rn(g):
     return RENAME.get(g, g)
@@ -119,21 +120,54 @@ def rn(g):
 records = []
 model_background = {}
 
-# ---- canonical gene lists
-gene_lists = {}
-for cat in CATS_SIMPLE:
-    d = pd.read_excel(PANELE_PATH, sheet_name=cat, header=3)
-    genes = [rn(g) for g in d['Gene'].dropna().tolist() if g not in ('Mean', 'SEM')]
-    gene_lists[cat] = genes
-gene_lists['OneC_folate_metabolism'] = [rn(g) for g in ONEC_FOLATE_GENES]
+# Pathway gene lists (fixed reference sets, not derived from any input file).
+gene_lists = {
+    'OXPHOS_subunits': [
+        'ATP5F1A', 'ATP5F1B', 'ATP5F1C', 'ATP5F1D', 'ATP5PB', 'ATP5PD', 'ATP5ME', 'ATP5PF',
+        'ATP5MF', 'ATP5MG', 'ATP5PO', 'COX4I1', 'COX5A', 'COX5B', 'COX6A1', 'COX6B1', 'COX6C',
+        'COX7A2', 'COX7A2L', 'COX7C', 'CYC1', 'CYCS', 'HCCS', 'MT-ATP6', 'MT-ATP8', 'MT-CO1',
+        'MT-CO2', 'MT-ND1', 'NDUFA10', 'NDUFA11', 'NDUFA12', 'NDUFA13', 'NDUFA2', 'NDUFA3',
+        'NDUFA4', 'NDUFA5', 'NDUFA6', 'NDUFA7', 'NDUFA8', 'NDUFA9', 'NDUFAB1', 'NDUFB1',
+        'NDUFB10', 'NDUFB11', 'NDUFB2', 'NDUFB3', 'NDUFB4', 'NDUFB5', 'NDUFB6', 'NDUFB7',
+        'NDUFB8', 'NDUFB9', 'NDUFS1', 'NDUFS2', 'NDUFS3', 'NDUFS4', 'NDUFS5', 'NDUFS7',
+        'NDUFS8', 'NDUFV1', 'NDUFV2', 'SDHA', 'SDHB', 'UQCR11', 'UQCRB', 'UQCRC1', 'UQCRC2',
+        'UQCRFS1', 'UQCRH', 'UQCRQ',
+    ],
+    'Fatty_acid_oxidation': [
+        'ACAA1', 'ACAA2', 'ACACA', 'ACAD10', 'ACAD11', 'ACADM', 'ACADSB', 'ACADVL', 'ACAT1',
+        'ACOT13', 'ACOT7', 'ACOT9', 'ACSF2', 'ACSF3', 'ACSL1', 'AGK', 'CPT1A', 'CPT2', 'CRAT',
+        'CROT', 'CYB5R3', 'DBI', 'DECR1', 'DHRS1', 'ECH1', 'ECHDC1', 'ECHS1', 'ECI1', 'ECI2',
+        'ETFA', 'ETFB', 'ETFDH', 'FASN', 'FDPS', 'FDXR', 'GCSH', 'HADH', 'HADHA', 'HADHB',
+        'HINT2', 'HSD17B10', 'HSD17B4', 'IDI1', 'LACTB', 'LYPLA1', 'MCEE', 'MGST3', 'MUT',
+        'NDUFAB1', 'OSBPL1A', 'PCCB', 'PLSCR3', 'PRDX6', 'PTGES2', 'PTPMT1', 'SCP2', 'SLC25A1',
+        'SLC25A20', 'SPTLC2', 'TAMM41', 'TSPO',
+    ],
+    'BCAA_metabolism': [
+        'ACADSB', 'ACAT1', 'ALDH6A1', 'BCAT2', 'BCKDHA', 'DBT', 'DLD', 'ECHS1', 'ETFA', 'ETFB',
+        'ETFDH', 'HADHA', 'HIBADH', 'HIBCH', 'HMGCL', 'HSD17B10', 'IVD', 'MCCC1', 'MCCC2',
+    ],
+    'NEAA_metabolism': [
+        'ALDH18A1', 'ASL', 'ASNS', 'ASS1', 'BCAT2', 'GLS', 'GOT1', 'GOT2', 'PHGDH', 'PSAT1',
+        'PSPH', 'PYCR1', 'PYCR2', 'SHMT2',
+    ],
+    'Sulfur_metabolism': ['ETHE1', 'GOT2', 'MPST', 'MSRA', 'SQOR', 'TST'],
+    'Methionine_metabolism_GOBP': [
+        'ADI1', 'AHCY', 'AHCYL1', 'AHCYL2', 'APIP', 'ENOPH1', 'MAT2A', 'MAT2B', 'MRI1', 'MSRA',
+        'MTAP', 'SMS',
+    ],
+    'OneC_folate_metabolism': [
+        'ALDH1L1', 'MTHFD1', 'MTHFR', 'SHMT1', 'DHFR', 'TYMS', 'MTHFD1L', 'MTHFD2', 'ALDH1L2',
+        'SHMT2', 'GART', 'ATIC',
+    ],
+}
 print('Canonical gene-list sizes:')
 for k, v in gene_lists.items():
     print(' ', k, len(v))
 
-# ---- MRC5, from EV_Table_8 (CAM/IMT proteomics), Sen CTRL vs Prolif CTRL only
+# ---- MRC5, from EV_Table_8, Sen CTRL vs Prolif CTRL only
 # sheet_name=0 (by position) + column-whitespace strip: prior EV tables in this project
 # have shown up with renamed sheets / stray leading spaces in different exported copies.
-cam = pd.read_excel(CAM_IMT_PATH, sheet_name=0)
+cam = pd.read_excel(EV_TABLE_8_PATH, sheet_name=0)
 cam.columns = cam.columns.str.strip()
 cam = cam.dropna(subset=['Gene names']).drop_duplicates(subset=['Gene names'], keep='first')
 cam['Gene names'] = cam['Gene names'].map(rn)
@@ -141,20 +175,7 @@ cam = cam.set_index('Gene names')
 own_fc = cam['Log2FC Sen CTRL vs Prolif CTRL']
 own_bg_mean = own_fc.dropna().mean()
 
-# Shared MitoCarta3.0 pathway lookup, loaded once here so it can be reused below for
-# the 30-model set too -- see the note in this script's docstring: EV_Table_8 itself
-# does not carry this column, so the same universal (not model-specific) annotation
-# is reused for it.
-mito_col = 'MitoCarta3.0_MitoPathways'
-mitocarta_annot = pd.read_excel(ANERILLAS_MITOCARTA_PATH, sheet_name='MitoCarta_annotations')
-mitocarta_annot.columns = mitocarta_annot.columns.str.strip()
-mitocarta_annot['Gene Symbol'] = mitocarta_annot['Gene Symbol'].map(rn)
-mito_pathway_lookup = (mitocarta_annot.set_index('Gene Symbol')[mito_col]
-                        if mito_col in mitocarta_annot.columns else None)
-if mito_pathway_lookup is not None:
-    mito_pathway_lookup = mito_pathway_lookup[~mito_pathway_lookup.index.duplicated()]
-
-MRC5_LABEL = 'MRC5 (CAM/IMT)'
+MRC5_LABEL = 'MRC5'
 model_background[MRC5_LABEL] = (own_fc.dropna() - own_bg_mean).values
 print('\nMRC5 full-proteome background size:', len(model_background[MRC5_LABEL]))
 for cat, genes in gene_lists.items():
@@ -163,17 +184,11 @@ for cat, genes in gene_lists.items():
             records.append(dict(model=MRC5_LABEL, category=cat, gene=g,
                                  log2FC_rel=own_fc[g] - own_bg_mean))
 
-ge_genes_mrc5 = []
-if mito_pathway_lookup is not None:
-    ge_genes_mrc5 = [g for g in own_fc.dropna().index
-                     if g in mito_pathway_lookup.index and isinstance(mito_pathway_lookup[g], str)
-                     and MITO_GE_PATTERN.search(mito_pathway_lookup[g])]
+ge_genes_mrc5 = [g for g in own_fc.dropna().index if g in MITO_GE_GENES]
 for g in ge_genes_mrc5:
     records.append(dict(model=MRC5_LABEL, category='Mito_gene_expression',
                          gene=g, log2FC_rel=own_fc[g] - own_bg_mean))
-print('MRC5 Mito_gene_expression genes:', len(ge_genes_mrc5),
-      '(sourced from analMito_Anerillas2026.xlsx, reused for the CAM/IMT gene '
-      'universe -- EV_Table_8 has no MitoCarta pathway column of its own.)')
+print('MRC5 Mito_gene_expression genes:', len(ge_genes_mrc5))
 
 # ---- Payea 2024 (etoposide-TIS vs cycling, IMR90)
 payea = pd.read_excel(PAYEA_PATH, sheet_name='Data')
@@ -196,11 +211,7 @@ for cat, genes in gene_lists.items():
             records.append(dict(model=PAYEA_LABEL, category=cat, gene=g,
                                  log2FC_rel=payea_fc_raw[g] - payea_bg_mean))
 
-mito_col = 'MitoCarta3.0_MitoPathways'
-payea_paths = payea.set_index('Symbol')[mito_col]
-payea_paths = payea_paths[~payea_paths.index.duplicated()]
-ge_genes = [g for g in payea_fc_raw.index
-            if g in payea_paths.index and isinstance(payea_paths[g], str) and MITO_GE_PATTERN.search(payea_paths[g])]
+ge_genes = [g for g in payea_fc_raw.index if g in MITO_GE_GENES]
 for g in ge_genes:
     records.append(dict(model=PAYEA_LABEL, category='Mito_gene_expression', gene=g,
                          log2FC_rel=payea_fc_raw[g] - payea_bg_mean))
@@ -210,9 +221,6 @@ print('Payea Mito_gene_expression genes:', len(ge_genes))
 CELLTYPE_SHEETS = {'WI38': 'WI38', 'BJ': 'BJ', 'HSAEC': 'HSAEC', 'HEKn': 'HEKn', 'HCAEC': 'HCAEC',
                     'HUVEC': 'HUVEC', 'BMMSC': 'BMMSC', 'HVSMC': 'HVSMC', 'HSKM': 'HSKM', 'PBMC': 'PBMC',
                     'PreAdipo': 'PreAdipo', 'NHO': 'NHO', 'NHA': 'NHA', 'HEMn': 'HEM'}
-
-# mito_pathway_lookup was already loaded once above (shared with the MRC5/CAM-IMT
-# block) -- reused here for the 30-model set, same as the original script's sen_paths.
 
 for ct, sheet in CELLTYPE_SHEETS.items():
     d = pd.read_excel(ANERILLAS_PATH, sheet_name=sheet)
@@ -233,19 +241,16 @@ for ct, sheet in CELLTYPE_SHEETS.items():
                 if g in diff.index and pd.notna(diff[g]):
                     records.append(dict(model=model_label, category=cat, gene=g,
                                          log2FC_rel=diff[g] - bg_mean))
-        if mito_pathway_lookup is not None:
-            ge_genes_ct = [g for g in diff.index
-                           if g in mito_pathway_lookup.index and isinstance(mito_pathway_lookup[g], str)
-                           and MITO_GE_PATTERN.search(mito_pathway_lookup[g])]
-            for g in ge_genes_ct:
-                if pd.notna(diff[g]):
-                    records.append(dict(model=model_label, category='Mito_gene_expression', gene=g,
-                                         log2FC_rel=diff[g] - bg_mean))
+        ge_genes_ct = [g for g in diff.index if g in MITO_GE_GENES]
+        for g in ge_genes_ct:
+            if pd.notna(diff[g]):
+                records.append(dict(model=model_label, category='Mito_gene_expression', gene=g,
+                                     log2FC_rel=diff[g] - bg_mean))
 
 gene_df = pd.DataFrame.from_records(records)
 print('\ntotal gene-level records:', len(gene_df))
 print('models built:', sorted(gene_df.model.unique()))
-assert MRC5_LABEL in gene_df.model.unique(), f'MRC5 (CAM/IMT) missing from gene_df -- check {CAM_IMT_PATH}'
+assert MRC5_LABEL in gene_df.model.unique(), f'MRC5 missing from gene_df -- check {EV_TABLE_8_PATH}'
 
 # ============================================================== 2. competitive permutation test
 N_PERM = 2000
@@ -344,7 +349,7 @@ ax.legend(handles=handles, loc='lower center', bbox_to_anchor=(0.42, -0.34), nco
 
 fig.text(0.015, 0.975, 'Direction and significance of change across all 30 senescence models', fontsize=13.5,
           fontweight='bold', color=INK, ha='left', va='top')
-subtitle = ('2 reference models (MRC5 CAM/IMT proteomics, Payea 2024 IMR90 etoposide) + 14 SenCat cell lines x '
+subtitle = ('2 reference models (MRC5, Payea 2024 IMR90 etoposide) + 14 SenCat cell lines x '
             'CTIS/IRIS. Competitive gene-resampling permutation test, 2000 resamples per model x category.')
 y_sub = 0.925
 for ln in textwrap.wrap(subtitle, width=100):

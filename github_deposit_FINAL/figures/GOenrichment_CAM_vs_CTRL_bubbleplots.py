@@ -4,7 +4,7 @@
 # Three scenarios: Prolif CAM vs Prolif CTRL, Sen CAM vs Sen CTRL, and
 # Sen CAM vs Sen CTRL excluding Prolif CAM effects.
 #
-# Quantitative data: EV_Table_8, sheet 'KSz_Jun2025_set1_Proteins' --
+# Quantitative data: EV_Table_8 (read by sheet position, not name) --
 # 'Gene names', 'Log2FC Prolif CAM vs Prolif CTRL', 'q-value Prolif CAM vs
 # Prolif CTRL', 'Log2FC Sen CAM vs Sen CTRL', 'q-value Sen CAM vs Sen CTRL'.
 #
@@ -39,8 +39,8 @@ def find_file(patterns, label):
 
 
 # ---- quantitative data ----
-CAM_IMT_PATH = find_file(['EV_Table_8*.xlsx'], 'CAM/IMT proteomics (Prolif/Sen CAM vs CTRL)')
-df = pd.read_excel(CAM_IMT_PATH, sheet_name='KSz_Jun2025_set1_Proteins')
+EV_TABLE_8_PATH = find_file(['EV_Table_8*.xlsx'], 'EV Table 8')
+df = pd.read_excel(EV_TABLE_8_PATH, sheet_name=0)
 
 # ---- GO Biological Process annotation ----
 GOBP_PATH = find_file(
