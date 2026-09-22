@@ -8,11 +8,20 @@
 # 'Gene names', 'Log2FC Prolif CAM vs Prolif CTRL', 'q-value Prolif CAM vs
 # Prolif CTRL', 'Log2FC Sen CAM vs Sen CTRL', 'q-value Sen CAM vs Sen CTRL'.
 #
-# GO annotation: not part of any EV table. Needs a standalone file
-# GOBP_annotations_CAM_IMT.xlsx with columns
-#   'Gene names'  -- same gene identifier as EV_Table_8, used to merge
-#   'GO_Names_P'  -- semicolon-separated GO Biological Process terms
-# Built from a QuickGO export by verification/build_GOBP_annotations_CAM_IMT.py.
+# GO annotation: not part of any EV table. Needs the original, unmodified QuickGO
+# Biological Process annotation export (tab-separated, one row per (gene product,
+# GO term) pair, all taxa and all three GO aspects mixed together), exported from
+# QuickGO on 2025-06-29 (GO release 2025-06-01) -- included in this repository
+# verbatim, exactly as downloaded, with nothing filtered or precomputed out of it.
+# This is public reference data covering the whole human genome, the same kind of
+# study-independent file as the MitoCarta3.0/SenMayo data used elsewhere in this
+# project -- it says nothing about which genes this study detected.
+#
+# Filtered and unioned at runtime, below: rows are kept where GO ASPECT == 'P'
+# (Biological Process) and TAXON ID == 9606 (human); EV_Table_8's own 'Gene names'
+# values can be a single symbol or several semicolon-joined protein-group members
+# (e.g. 'UQCRFS1;UQCRFS1P1'), so each constituent symbol's terms are looked up and
+# unioned per row.
 # =====================================================================
 import glob
 import pandas as pd
@@ -42,13 +51,30 @@ def find_file(patterns, label):
 EV_TABLE_8_PATH = find_file(['EV_Table_8*.xlsx'], 'EV Table 8')
 df = pd.read_excel(EV_TABLE_8_PATH, sheet_name=0)
 
-# ---- GO Biological Process annotation ----
-GOBP_PATH = find_file(
-    ['GOBP_annotations_CAM_IMT*.xlsx', 'GO_annotations_CAM_IMT*.xlsx'],
-    'per-gene GO Biological Process annotation (GO_Names_P) -- see script header',
+# ---- GO Biological Process annotation: original raw QuickGO export, unmodified ----
+QUICKGO_PATH = find_file(
+    ['QuickGO-annotations-*.tsv'],
+    'raw QuickGO Biological Process annotation export -- see script header',
 )
-gobp_df = pd.read_excel(GOBP_PATH)
-df = df.merge(gobp_df[['Gene names', 'GO_Names_P']], on='Gene names', how='left')
+_go = pd.read_csv(QUICKGO_PATH, sep='\t')
+_go = _go[(_go['GO ASPECT'] == 'P') & (_go['TAXON ID'] == 9606)]
+_go = _go[['SYMBOL', 'GO NAME']].dropna().drop_duplicates()
+_symbol_to_terms = _go.groupby('SYMBOL')['GO NAME'].apply(lambda s: sorted(set(s))).to_dict()
+print(f"QuickGO: {len(_go)} unique (symbol, BP term) pairs, "
+      f"{len(_symbol_to_terms)} symbols with >=1 BP term")
+
+
+def _lookup_go_terms(gene_names_value):
+    """Union GO Biological Process terms across every constituent symbol of an
+    EV_Table_8 'Gene names' value (semicolon-joined for protein groups)."""
+    terms = set()
+    for sym in str(gene_names_value).split(';'):
+        sym = sym.strip()
+        terms.update(_symbol_to_terms.get(sym, []))
+    return '; '.join(sorted(terms)) if terms else None
+
+
+df['GO_Names_P'] = df['Gene names'].apply(_lookup_go_terms)
 
 # GO term column definitions and FDR cut-off
 gobp_col = "GO_Names_P"

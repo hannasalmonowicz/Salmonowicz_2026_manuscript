@@ -6,13 +6,10 @@ Single self-contained script, no intermediate cache files.
 
 Inputs:
 
-(1) EV tables:
+EV tables:
       EV_Table_8*.xlsx   -- MRC5 proteomics
       EV_Table_10*.xlsx  -- 30-model TIS meta-analysis (Anerillas)
-
-(2) Bundled in figures/data/, not an EV table:
-      Payea2024_IMR90_etoposide.xlsx -- Payea et al. 2024 published dataset,
-                                         trimmed to the columns this script uses
+      EV_Table_12*.xlsx  -- Payea et al. 2024 IMR90 etoposide dataset
 
 Pathway gene lists (OXPHOS subunits, fatty acid oxidation, BCAA, NEAA, sulfur
 metabolism, methionine metabolism, 1C/folate) and MITO_GE_GENES (gene symbols
@@ -56,9 +53,9 @@ def find_file(patterns, label):
 # ---- EV tables ----
 EV_TABLE_8_PATH = find_file(['EV_Table_8*.xlsx'], 'EV Table 8')
 ANERILLAS_PATH = find_file(['EV_Table_10*.xlsx'], '30-model TIS meta-analysis (Anerillas)')
-
-# ---- bundled reference files (figures/data/) ----
-PAYEA_PATH = find_file(['Payea2024_IMR90_etoposide.xlsx'], 'Payea et al. 2024 dataset')
+PAYEA_PATH = find_file(
+    ['EV_Table_12*.xlsx', 'analMito_Payea2024.xlsx'],
+    'EV Table 12 / Payea et al. 2024 IMR90 etoposide dataset')
 
 print('All required inputs found:')
 for _label, _path in [('EV_TABLE_8_PATH', EV_TABLE_8_PATH), ('ANERILLAS_PATH', ANERILLAS_PATH),
@@ -182,7 +179,8 @@ for g in ge_genes_mrc5:
                          gene=g, log2FC_rel=own_fc[g] - own_bg_mean))
 print('MRC5 Mito_gene_expression genes:', len(ge_genes_mrc5), '(not used by the final EV1O plot either way.)')
 
-payea = pd.read_excel(PAYEA_PATH, sheet_name='Data')
+payea = pd.read_excel(PAYEA_PATH, sheet_name=0)
+payea.columns = payea.columns.str.strip()
 payea['Symbol'] = payea['Symbol'].map(rn)
 cyc_cols = ['Cyc_1', 'Cyc_2', 'Cyc_3']
 etop_cols = ['Etop_1', 'Etop_2', 'Etop_3']

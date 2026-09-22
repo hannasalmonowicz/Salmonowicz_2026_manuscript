@@ -7,13 +7,10 @@ used for every other model).
 
 Inputs:
 
-(1) EV tables:
+EV tables:
       EV_Table_8*.xlsx   -- MRC5 proteomics
       EV_Table_10*.xlsx  -- all 14 SenCat lines
-
-(2) Bundled in figures/data/, not an EV table:
-      Payea2024_IMR90_etoposide.xlsx -- Payea et al. 2024 published dataset,
-                                         trimmed to the columns this script uses
+      EV_Table_12*.xlsx  -- Payea et al. 2024 IMR90 etoposide dataset
 
 Pathway gene lists (OXPHOS subunits, fatty acid oxidation, BCAA, NEAA, sulfur
 metabolism, 1C/folate) and MITO_GE_GENES (gene symbols annotated to the MitoCarta3.0
@@ -57,9 +54,9 @@ def find_file(patterns, label):
 # ---- EV tables ----
 EV_TABLE_8_PATH = find_file(['EV_Table_8*.xlsx'], 'EV Table 8')
 ANERILLAS_PATH = find_file(['EV_Table_10*.xlsx'], '30-model TIS meta-analysis (Anerillas)')
-
-# ---- bundled reference files (figures/data/) ----
-PAYEA_PATH = find_file(['Payea2024_IMR90_etoposide.xlsx'], 'Payea et al. 2024 dataset')
+PAYEA_PATH = find_file(
+    ['EV_Table_12*.xlsx', 'analMito_Payea2024.xlsx'],
+    'EV Table 12 / Payea et al. 2024 IMR90 etoposide dataset')
 
 print('All required inputs found:')
 for _label, _path in [('EV_TABLE_8_PATH', EV_TABLE_8_PATH), ('ANERILLAS_PATH', ANERILLAS_PATH),
@@ -180,7 +177,8 @@ all_records += recs
 print(MRC5_LABEL, 'full-proteome background size:', len(bg), '| Mito_gene_expression genes:', len(ge_genes_cam))
 
 # ---------------------------------------------------------- IMR90 (Payea 2024)
-payea = pd.read_excel(PAYEA_PATH, sheet_name='Data')
+payea = pd.read_excel(PAYEA_PATH, sheet_name=0)
+payea.columns = payea.columns.str.strip()
 payea['Symbol'] = payea['Symbol'].map(rn)
 cyc_mean = payea[['Cyc_1', 'Cyc_2', 'Cyc_3']].mean(axis=1)
 etop_mean = payea[['Etop_1', 'Etop_2', 'Etop_3']].mean(axis=1)
