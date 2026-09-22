@@ -56,8 +56,9 @@ DATA_DIR = 'data'
 
 
 def find_file(patterns, label):
-    """Find a required input by glob pattern(s): checks ./data/ first, then
-    the current folder, and raises FileNotFoundError naming the missing file."""
+    """Find a required input by glob pattern(s), checking ./data/ first, then the
+    current folder. Raises loudly and by name if not found -- never silently skips
+    a required input."""
     for pat in patterns:
         matches = glob.glob(f'{DATA_DIR}/{pat}') or glob.glob(pat)
         if matches:
@@ -113,7 +114,7 @@ if mito_pathway_lookup is not None:
 CATS_SIMPLE = ['OXPHOS_subunits', 'Fatty_acid_oxidation', 'BCAA_metabolism',
                'NEAA_metabolism', 'Sulfur_metabolism']
 ONEC_FOLATE_GENES = ['ALDH1L1', 'MTHFD1', 'MTHFR', 'SHMT1', 'DHFR', 'TYMS',
-                      'MTHFD1L', 'MTHFD2', 'ALDH1L2', 'SHMT2', 'GART', 'ATIC']
+                      'MTHFD1L', 'MTHFD2', 'ALDH1L2', 'SHMT2', 'GART', 'ATIC']  # +GART, +ATIC per PI
 
 gene_lists = {}
 for cat in CATS_SIMPLE:

@@ -39,7 +39,8 @@ DATA_DIR = 'data'
 # 'EV_Table_1_*' (with the trailing underscore), not 'EV_Table_1*' -- the deposit's
 # data/ folder also holds EV_Table_10_meta_analysis_30_TIS_models.xlsx, which an
 # unanchored 'EV_Table_1*' pattern also matches (it starts with 'EV_Table_1'), and
-# glob() gives no ordering guarantee between the two files.
+# glob() gives no ordering guarantee -- caught during the pre-GitHub folder cleanup,
+# when EV_Table_1 and EV_Table_10 ended up in the same data/ folder for the first time.
 ev1_matches = glob.glob(f'{DATA_DIR}/EV_Table_1_*.xlsx') or glob.glob('EV_Table_1_*.xlsx')
 if not ev1_matches:
     raise FileNotFoundError(
