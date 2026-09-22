@@ -45,8 +45,8 @@ os.makedirs(OUT, exist_ok=True)
 
 def find_file(patterns, label):
     """Find a required input by glob pattern(s), checking ./data/ first, then
-    the current folder. Raises loudly and by name if not found -- never
-    silently skips a required input."""
+    the current folder, and raises FileNotFoundError naming the missing
+    file."""
     for pat in patterns:
         matches = glob.glob(f"{DATA_DIR}/{pat}") or glob.glob(pat)
         if matches:
@@ -245,9 +245,9 @@ def _load_stats_file(cond_a, cond_b, polarity):
 def fdr_lookup(compound_name, cond_a, cond_b):
     """Looks up 'adjusted p-value (fdr)' for compound_name in EV_Table_11,
     for the cond_a/cond_b contrast, in the polarity pick_mode() already
-    selected for this compound. Returns (value, found) -- value is
-    NaN and found is False when the file/contrast isn't available yet, which
-    the caller renders as 'FDR pending' rather than guessing or recomputing."""
+    selected for this compound. Returns (value, found) -- value is NaN and
+    found is False when the file/contrast isn't available, which the caller
+    renders as 'FDR pending'."""
     mode = pick_mode(compound_name)
     stats_df = _load_stats_file(cond_a, cond_b, "negative" if mode == "neg" else "positive")
     if stats_df is None:

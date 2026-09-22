@@ -51,9 +51,8 @@ OUT_DIR = '.'
 
 
 def find_file(patterns, label):
-    """Find a required input by glob pattern(s), checking ./data/ first, then the
-    current folder. Raises loudly and by name if not found -- never silently skips
-    a required input."""
+    """Find a required input by glob pattern(s): checks ./data/ first, then
+    the current folder, and raises FileNotFoundError naming the missing file."""
     for pat in patterns:
         matches = glob.glob(f'{DATA_DIR}/{pat}') or glob.glob(pat)
         if matches:
