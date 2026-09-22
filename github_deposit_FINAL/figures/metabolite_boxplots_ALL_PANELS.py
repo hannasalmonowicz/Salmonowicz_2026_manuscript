@@ -2,25 +2,22 @@
 ALL MANUSCRIPT METABOLITE BOXPLOTS (Fig 2G/H, 4C-G, 5C, 6C/D, EV6G/H,
 EV10F/G-H -- 21 panels).
 
-Inputs -- two kinds:
+Inputs -- both are EV tables, nothing else needed:
 
-(1) EV table:
-      EV_Table_3*.xlsx -- sheets 'Neg_mode_Normalized-BMIS' / 'Pos_mode_Normalized-BMIS',
-      standard MS-DIAL layout (a 'Class' label cell marking where the per-sample columns
-      start, a 'Metabolite name' column, sample columns grouped by Class into Prolif_CAM,
-      Prolif_CTRL, Prolif_GAL, Sen_CAM, Sen_CTRL, Sen_GAL, QC). The parser below locates
-      both by searching the sheet rather than assuming a fixed row/column.
+(1) EV_Table_3*.xlsx -- sheets 'Neg_mode_Normalized-BMIS' / 'Pos_mode_Normalized-BMIS',
+    standard MS-DIAL layout (a 'Class' label cell marking where the per-sample columns
+    start, a 'Metabolite name' column, sample columns grouped by Class into Prolif_CAM,
+    Prolif_CTRL, Prolif_GAL, Sen_CAM, Sen_CTRL, Sen_GAL, QC). The parser below locates
+    both by searching the sheet rather than assuming a fixed row/column.
 
-(2) Not an EV table -- required, not yet supplied:
-      Facility statistical-results files ('statistical results <contrast>
-      vs <contrast>_BMIS_<polarity>.txt') -- these carry the
-      'adjusted p-value (fdr)' column used for the significance bracket on
-      every single-metabolite panel (ratio panels keep a directly computed
-      Welch's t-test, unchanged -- see STATISTICS below). Until these are
-      supplied, single-metabolite panels still render from the real EV
-      table data, with the bracket labelled 'FDR pending' rather than an
-      estimated value. Run this script once real stats files are in
-      ./data/ and re-check the "still needed" list it prints.
+(2) EV_Table_11_Metabolomics_Statistical_Results*.xlsx -- two sheets,
+    'Negative_mode_statistics' / 'Positive_mode_statistics', each with a 'Contrast'
+    column ("<A> vs <B>") and an 'adjusted p-value (fdr)' column -- carries the FDR
+    used for the significance bracket on every single-metabolite panel (ratio panels
+    keep a directly computed Welch's t-test, unchanged -- see STATISTICS below).
+    Optional: if this file isn't present, single-metabolite panels still render from
+    the real EV_Table_3 data, with the bracket labelled 'FDR pending' instead of a
+    value.
 
 STATISTICS: single-metabolite comparisons come from the real facility FDR, never
 recomputed. Ratio panels (e.g. "NAD / NADH") are the exception and keep a Welch's
@@ -66,6 +63,14 @@ EV_TABLE_3_PATH = find_file(
     "(Neg_mode_Normalized-BMIS / Pos_mode_Normalized-BMIS sheets)",
 )
 print(f"Using EV_TABLE_3_PATH: {EV_TABLE_3_PATH}\n")
+
+# Optional: EV_Table_11 (significance brackets). Not required to run the script --
+# if absent, brackets just read "FDR pending".
+_ev11_matches = glob.glob(f"{DATA_DIR}/EV_Table_11_Metabolomics_Statistical_Results*.xlsx") \
+    or glob.glob("EV_Table_11_Metabolomics_Statistical_Results*.xlsx")
+EV_STATS_PATH = _ev11_matches[0] if _ev11_matches else None
+print(f"Using EV_STATS_PATH: {EV_STATS_PATH}"
+      + ("" if EV_STATS_PATH else "  (not found -- brackets will read 'FDR pending')") + "\n")
 
 # ---------- 2. BMIS MATRIX PARSER (EV_Table_3, xlsx) ----------
 def parse_bmis_ev_table(path, sheet_name):
@@ -198,49 +203,51 @@ def fmt_p(p):
     return f"p={p:.3f}"
 
 
-# Single-metabolite panels: FDR looked up from the facility stats file for
-# the exact contrast being drawn, in whichever polarity pick_mode() already
-# selected for that compound -- never recomputed. STATS_MISSING collects
-# every (contrast, polarity) file this run actually needed but could not
-# find, so the end-of-run summary lists precisely what's still needed
-# rather than a blanket "supply everything" ask.
-_STATS_CACHE = {}
+# Single-metabolite panels: FDR looked up from EV_Table_11, for the exact
+# contrast being drawn, in whichever polarity pick_mode() already selected for
+# that compound -- never recomputed. STATS_MISSING collects every (contrast,
+# polarity) this run actually needed but could not find (file absent, or that
+# contrast/compound not in it), so the end-of-run summary says precisely what's
+# still pending rather than a blanket "supply everything" ask.
+_EV_STATS_SHEET_CACHE = {}
 STATS_MISSING = set()
 
 
-def _load_stats_file(cond_a, cond_b, polarity):
-    key = (cond_a, cond_b, polarity)
-    if key in _STATS_CACHE:
-        return _STATS_CACHE[key]
-    candidates = [
-        f"statistical results {cond_a} vs {cond_b}*{polarity}*.txt",
-        f"statistical results {cond_b} vs {cond_a}*{polarity}*.txt",
-    ]
-    path = None
-    for pat in candidates:
-        matches = glob.glob(f"{DATA_DIR}/{pat}") or glob.glob(pat)
-        if matches:
-            path = matches[0]
-            break
-    if path is None:
-        _STATS_CACHE[key] = None
+def _load_ev_stats_sheet(polarity):
+    """Loads (and caches) one sheet of EV_Table_11. Returns None if the file
+    isn't present -- callers treat that as 'not yet supplied', same as before."""
+    if EV_STATS_PATH is None:
         return None
-    df = pd.read_csv(path, sep="\t", encoding=ENC)
+    if polarity in _EV_STATS_SHEET_CACHE:
+        return _EV_STATS_SHEET_CACHE[polarity]
+    sheet = "Negative_mode_statistics" if polarity == "negative" else "Positive_mode_statistics"
+    df = pd.read_excel(EV_STATS_PATH, sheet_name=sheet)
     df.columns = [str(c).strip() for c in df.columns]
     df["_clean_id"] = (
         df["Identification"].astype(str).str.strip().str.rstrip("*").str.strip()
     )
     df = df[~df["_clean_id"].str.startswith("IS:")]
-    _STATS_CACHE[key] = df
+    _EV_STATS_SHEET_CACHE[polarity] = df
     return df
 
 
+def _load_stats_file(cond_a, cond_b, polarity):
+    df = _load_ev_stats_sheet(polarity)
+    if df is None:
+        return None
+    for contrast in (f"{cond_a} vs {cond_b}", f"{cond_b} vs {cond_a}"):
+        sub = df[df["Contrast"] == contrast]
+        if not sub.empty:
+            return sub
+    return None
+
+
 def fdr_lookup(compound_name, cond_a, cond_b):
-    """Looks up 'adjusted p-value (fdr)' for compound_name in the facility
-    stats file for the cond_a/cond_b contrast, in the polarity pick_mode()
-    already selected for this compound. Returns (value, found) -- value is
-    NaN and found is False when the file isn't available yet, which the
-    caller renders as 'FDR pending' rather than guessing or recomputing."""
+    """Looks up 'adjusted p-value (fdr)' for compound_name in EV_Table_11,
+    for the cond_a/cond_b contrast, in the polarity pick_mode() already
+    selected for this compound. Returns (value, found) -- value is
+    NaN and found is False when the file/contrast isn't available yet, which
+    the caller renders as 'FDR pending' rather than guessing or recomputing."""
     mode = pick_mode(compound_name)
     stats_df = _load_stats_file(cond_a, cond_b, "negative" if mode == "neg" else "positive")
     if stats_df is None:
@@ -469,12 +476,12 @@ if __name__ == "__main__":
 
     if STATS_MISSING:
         print(
-            "\nFacility statistics files still needed for full transparency "
+            "\nEV_Table_11 contrast(s) still needed for full transparency "
             "(single-metabolite significance brackets above currently read "
-            "'FDR pending' until these are supplied):"
+            "'FDR pending' until these are found):"
         )
         for cond_a, cond_b, polarity in sorted(STATS_MISSING):
-            print(f"  statistical results {cond_a} vs {cond_b}_BMIS_{polarity}.txt")
+            print(f"  {cond_a} vs {cond_b}  ({polarity} mode)")
         print(
             "Each panel's boxes and data are already from the real EV_Table_3 "
             "values -- only the significance annotation is pending."
