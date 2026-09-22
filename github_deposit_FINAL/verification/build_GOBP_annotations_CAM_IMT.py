@@ -33,12 +33,11 @@ What this script does, nothing more:
      terms in the export get GO_Names_P = NaN (dropped downstream by the
      plotting script's own .dropna()).
 
-Verified against the real files: 136,264 raw BP rows -> 102,833
-unique (symbol, term) pairs across 19,345 symbols; matched 4,485 of
-EV_Table_8's 4,811 unique 'Gene names' values to at least one BP term
-(93.2%) -- the remaining 6.8% simply have no Biological Process annotation
-in this QuickGO export, not a script bug (spot-checked several: obscure/
-uncharacterized ORFs and a few outdated gene symbols).
+Example run: 136,264 raw BP rows -> 102,833 unique (symbol, term) pairs
+across 19,345 symbols; matched 4,485 of EV_Table_8's 4,811 unique 'Gene
+names' values to at least one BP term (93.2%). The remaining 6.8% have no
+Biological Process annotation in this QuickGO export (spot-checked several:
+obscure/uncharacterized ORFs and a few outdated gene symbols).
 """
 import pandas as pd
 
