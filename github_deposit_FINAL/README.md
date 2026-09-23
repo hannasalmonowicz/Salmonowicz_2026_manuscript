@@ -5,20 +5,14 @@ Code for the figures in:
 Salmonowicz H. et al., Therapy-induced senescence preserves dormant OXPHOS to promote
 metabolic adaptability (manuscript).
 
-This repository reads the manuscript's EV tables and produces each published figure:
-pre-ranked GSEA on the proteomics data (Fig 4J, 5E), a cross-model permutation test for
-pathway generality across 30 published senescence datasets (Fig 1G/1H, EV1O), GO
-Biological Process enrichment (EV7B), an ANOVA + Bonferroni comparison on the
-isolated-mitochondria proteomics (Fig 2B), and metabolomics quantification/statistics
-plotting (Fig 6E and the boxplot panels). Each script reads its inputs from `data/` and
-writes its output next to itself.
+This repository contains the code used to generate the figures listed below
+(Fig 1E, 1G, 1H, 2B, 2G/H, 4C–G, 4J, 5C, 5E, 5G, 6C/D, 6E, EV1O, EV6G/H, EV7B, EV10F/G–H).
+Each script reads its input files from `data/` and writes its output next to itself.
 
-Every script's only inputs are the manuscript's own EV tables — nothing else to download,
-no separate bundled files. Every non-EV-table dependency this repository used to have is
-now either part of an EV table or hardcoded directly as a Python set literal inside the
-script that uses it: five gene lists are hardcoded, the Payea et al. 2024 dataset is now
-EV_Table_12, and the GO Biological Process annotation used by the EV7B bubble plots is now
-its own column, `GO_Names_P`, inside EV_Table_8 itself (see "GO annotation" below).
+Each script's only required inputs are the manuscript's EV tables. A small number of
+fixed gene lists are defined directly within the scripts that use them, and the GO
+annotation required for Figure EV7B is included as a column in EV_Table_8 (see "GO
+annotation" below).
 
 ## Figures
 
@@ -39,26 +33,24 @@ its own column, `GO_Names_P`, inside EV_Table_8 itself (see "GO annotation" belo
 `fig2B`'s output reproduces the manuscript's reported n=4 (1C metabolism) and n=6
 (Sulfur metabolism) exactly.
 
-**Method in brief.** GSEA (Fig 4J, Fig 5E) is pre-ranked, run with `gseapy`, ranking
-metric sign(log2FC) x -log10(p-value). Category-level significance across models
-(Fig 1H, EV1O) is assessed by a competitive gene-resampling permutation test on Log2FC
-values, not by the EV tables' own per-protein p/q-values. Fig 2B uses an ordinary ANOVA
-with Bonferroni correction. Metabolomics panels (Fig 6E and the boxplot script) report
-the facility's own FDR/q-values as-is; nothing is recomputed except the ratio panels,
-which use a Welch's t-test on the log2 ratio.
+**Statistics.** GSEA (Fig 4J, 5E) is pre-ranked and run with the `gseapy` package.
+Fig 1H and EV1O assess pathway-category significance across all 30 models using a
+resampling-based permutation test, independent of the EV tables' own per-protein
+p-values. Fig 2B uses an ANOVA with Bonferroni correction. The metabolomics panels
+(Fig 6E and the boxplot script) report the source facility's FDR/q-values without
+recalculation, except the ratio panels, which use a Welch's t-test.
 
-EV_Table_10 (30-model meta-analysis, Anerillas et al.), EV_Table_11 (consolidated
-metabolomics statistical results), and EV_Table_12 (Payea et al. 2024 dataset) are
-matched by glob pattern (`EV_Table_10*.xlsx`,
-`EV_Table_*_Metabolomics_Statistical_Results*.xlsx`, `EV_Table_12*.xlsx`), so any final
-EV table number works without a code change.
+EV_Table_10, EV_Table_11, and EV_Table_12 are matched by filename pattern rather than
+an exact name (e.g. any file starting with `EV_Table_10` and ending `.xlsx`), so the
+scripts still work even if the final table numbers in the published manuscript end up
+different from what's used here.
 
 ## Running
 
 Place the manuscript's EV tables under `figures/data/`, then run any script from the
 `figures/` directory, e.g.:
 
-```
+```bash
 cd figures
 python3 fig1G_generality_matrix.py
 ```
@@ -66,26 +58,10 @@ python3 fig1G_generality_matrix.py
 Each script checks `./data/` first, then the current folder, and raises a clear
 `FileNotFoundError` naming exactly what's missing.
 
-## GO annotation (used by the EV7B bubble plots)
+## GO annotation
 
-`GOenrichment_CAM_vs_CTRL_bubbleplots.py` needs one extra column on EV_Table_8,
-`GO_Names_P`: for each row, the semicolon-joined set of GO Biological Process term names
-for that row's gene(s) (unioned across every constituent symbol when `Gene names` is a
-semicolon-joined protein group, e.g. `UQCRFS1;UQCRFS1P1`). It was generated once from the
-original, unmodified QuickGO Biological Process annotation export (GO release 2025-06-01,
-exported 2025-06-29), keeping only human (`TAXON ID` 9606) Biological Process
-(`GO ASPECT` `'P'`) rows — see `verification/PROVENANCE.md` for the exact derivation and
-match-rate numbers. Nothing else needs to be downloaded or bundled for this figure: the
-annotation ships as part of the EV table itself, the same as every other input in this
-repository.
-
-## verification/
-
-Not figure-producing code, and nothing here is meant to be run — `PROVENANCE.md` is a
-plain-text reference document, not a script. It records where every non-EV-table input
-(the five gene lists hardcoded directly in the scripts, the GO_Names_P annotation column
-now part of EV_Table_8, and the Payea dataset before it became EV_Table_12) came from and
-how it was derived, for the audit trail.
+EV_Table_8 contains the GO Biological Process annotation column (`GO_Names_P`) required
+to reproduce Figure EV7B (`GOenrichment_CAM_vs_CTRL_bubbleplots.py`).
 
 ## Data
 
@@ -113,7 +89,7 @@ across tissues. Nat Commun 13:4827. doi:10.1038/s41467-022-32552-1
 
 ## Author
 
-Hanna Salmonowicz
+Hanna Salmonowicz. Code written with the assistance of Claude (Anthropic).
 
 ## License
 
