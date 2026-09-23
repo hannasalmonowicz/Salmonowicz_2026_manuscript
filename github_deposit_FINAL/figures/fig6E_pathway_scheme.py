@@ -12,13 +12,15 @@
 # consideration. Every node's full neg/pos t / FDR / %CV and which mode was
 # used is recorded in AUDIT and printed/saved, so the choice is never silent.
 #
-# Input: EV_Table_X_Metabolomics_Statistical_Results.xlsx (or whatever EV
-# number is ultimately assigned), which combines the facility's 10 separate
-# statistical-results exports. Every value is read verbatim from the
-# facility's own numbers -- nothing here recomputes a statistic.
+# Input: EV_Table_<N>_Metabolomics_Statistical_Results.xlsx, which combines
+# the facility's 10 separate statistical-results exports. Every value is read
+# verbatim from the facility's own numbers -- nothing here recomputes a
+# statistic. Matched by a number-agnostic glob (EV_Table_*_Metabolomics_
+# Statistical_Results*.xlsx), so it's found regardless of which EV table
+# number is ultimately assigned.
 #
-# Put that file in a folder named "data/" next to this notebook:
-#   EV_Table_X_Metabolomics_Statistical_Results.xlsx
+# Put that file in a folder named "data/" next to this notebook, e.g.:
+#   EV_Table_11_Metabolomics_Statistical_Results.xlsx
 #   (two sheets: Negative_mode_statistics / Positive_mode_statistics,
 #    each with a 'Contrast' column -- this script filters both sheets to
 #    Contrast == "Sen_CAM vs Sen_CTRL", the only contrast this figure uses.)
