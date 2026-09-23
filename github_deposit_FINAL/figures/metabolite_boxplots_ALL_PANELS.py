@@ -65,9 +65,11 @@ EV_TABLE_3_PATH = find_file(
 print(f"Using EV_TABLE_3_PATH: {EV_TABLE_3_PATH}\n")
 
 # Optional: EV_Table_11 (significance brackets). Not required to run the script --
-# if absent, brackets just read "FDR pending".
-_ev11_matches = glob.glob(f"{DATA_DIR}/EV_Table_11_Metabolomics_Statistical_Results*.xlsx") \
-    or glob.glob("EV_Table_11_Metabolomics_Statistical_Results*.xlsx")
+# if absent, brackets just read "FDR pending". Matched by a number-agnostic glob,
+# same convention as every other multi-digit EV table in this repo, so it's found
+# regardless of what number it ends up as (or a placeholder like "EV_Table_X_...").
+_ev11_matches = glob.glob(f"{DATA_DIR}/EV_Table_*_Metabolomics_Statistical_Results*.xlsx") \
+    or glob.glob("EV_Table_*_Metabolomics_Statistical_Results*.xlsx")
 EV_STATS_PATH = _ev11_matches[0] if _ev11_matches else None
 print(f"Using EV_STATS_PATH: {EV_STATS_PATH}"
       + ("" if EV_STATS_PATH else "  (not found -- brackets will read 'FDR pending')") + "\n")
