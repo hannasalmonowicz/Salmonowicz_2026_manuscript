@@ -4,13 +4,7 @@ matplotlib>=3.6
 seaborn>=0.12
 scipy>=1.9
 openpyxl>=3.0
-xlrd>=2.0.1
 gseapy>=1.1.9
-
-# xlrd: only needed for verification/build_MitoCarta_annotation_isolated_mito.py,
-# which reads the official MitoCarta3.0 download in its original legacy .xls format
-# (openpyxl cannot read .xls, only .xlsx). No figure script needs it -- every EV
-# table and every other standalone data file in this deposit is .xlsx.
 
 # gseapy: fig4J_GSEA_SenMayo.py and fig5E_GSEA_ATF4_ISR.py were originally written
 # against gseapy 1.1.9 (per the scripts' own comments). They were also verified in
