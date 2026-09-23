@@ -48,8 +48,7 @@ def find_file(patterns, label):
 
 
 EV_STATS_PATH = find_file(
-    ["EV_Table_X_Metabolomics_Statistical_Results*.xlsx",
-     "EV_Table_*_Metabolomics_Statistical_Results*.xlsx"],
+    ["EV_Table_*_Metabolomics_Statistical_Results*.xlsx"],
     "combined metabolomics statistical-results EV table "
     "(Negative_mode_statistics / Positive_mode_statistics sheets)",
 )

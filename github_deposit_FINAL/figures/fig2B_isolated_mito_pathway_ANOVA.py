@@ -12,8 +12,7 @@ Every gene-category definition below (Complex I-V, mito gene expression, fatty a
 oxidation, BCAA/sulfur/NEAA/1C/nucleotide metabolism, and the 735-gene mitoproteome
 reference background) is hardcoded as a Python set literal, extracted from a manually
 curated categorization (the isolated-mito analog of the one already used by the
-trajectory script) and cross-checked against the MitoCarta3.0 pathway annotation. See
-verification/PROVENANCE.md for the exact derivation and QC numbers. A full run against
+trajectory script) and cross-checked against the MitoCarta3.0 pathway annotation. A full run against
 EV_Table_2 reproduces the manuscript's reported n=4 for 1C metabolism and n=6 for
 Sulfur metabolism exactly.
 """
@@ -53,8 +52,8 @@ def find_file(patterns, label):
     )
 
 
-# ── Hardcoded gene sets (curated, cross-checked against MitoCarta3.0; see
-# verification/PROVENANCE.md for derivation) -- no external file needed ──────
+# ── Hardcoded gene sets (curated, cross-checked against MitoCarta3.0) --
+# no external file needed ──────────────────────────────────────────────
 MITOPROTEOME_ISO = {
     'AADAT', 'AARS2', 'AASS', 'ABAT', 'ABCB10', 'ABCB6', 'ABCB7', 'ABCB8', 'ABCD1', 'ABCD3',
     'ABHD10', 'ABHD11', 'ACAA1', 'ACAA2', 'ACACA', 'ACAD10', 'ACAD11', 'ACAD8', 'ACAD9',

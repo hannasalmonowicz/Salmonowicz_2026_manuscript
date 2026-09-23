@@ -16,7 +16,7 @@ metabolism, methionine metabolism, 1C/folate) and MITO_GE_GENES (gene symbols
 annotated to the MitoCarta3.0 "Translation / mtDNA maintenance / mtRNA metabolism"
 pathways; loaded but not one of the four categories actually plotted/correlated in
 the final EV1O figure) are fixed reference sets, hardcoded directly below rather
-than read from a separate file. See verification/PROVENANCE.md.
+than read from a separate file.
 
 Output:
   Correlation_OXPHOS_vs_pathways.png/svg
@@ -54,7 +54,7 @@ def find_file(patterns, label):
 EV_TABLE_8_PATH = find_file(['EV_Table_8*.xlsx'], 'EV Table 8')
 ANERILLAS_PATH = find_file(['EV_Table_10*.xlsx'], '30-model TIS meta-analysis (Anerillas)')
 PAYEA_PATH = find_file(
-    ['EV_Table_12*.xlsx', 'analMito_Payea2024.xlsx'],
+    ['EV_Table_12*.xlsx'],
     'EV Table 12 / Payea et al. 2024 IMR90 etoposide dataset')
 
 print('All required inputs found:')
@@ -64,7 +64,7 @@ for _label, _path in [('EV_TABLE_8_PATH', EV_TABLE_8_PATH), ('ANERILLAS_PATH', A
 print()
 
 # Hardcoded (curated, cross-checked against MitoCarta3.0; see
-# verification/PROVENANCE.md for derivation) -- no external file needed.
+# no external file needed.
 MITO_GE_GENES = {
     'AARS2', 'ALKBH1', 'ANGEL2', 'APEX1', 'ATAD3A', 'ATAD3B', 'AURKAIP1', 'CARS2', 'CDK5RAP1',
     'CHCHD1', 'COA3', 'COX14', 'DAP3', 'DARS2', 'DDX28', 'DHX30', 'DNA2', 'DUS2', 'EARS2',

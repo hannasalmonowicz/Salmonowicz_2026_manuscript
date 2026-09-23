@@ -16,8 +16,8 @@
 # 'UQCRFS1;UQCRFS1P1'). It was generated once from the original, unmodified
 # QuickGO Biological Process annotation export (GO release 2025-06-01,
 # exported 2025-06-29), keeping only human (TAXON ID 9606) Biological
-# Process (GO ASPECT 'P') rows -- see verification/PROVENANCE.md for the
-# exact derivation and match-rate numbers.
+# Process (GO ASPECT 'P') rows, unioned per gene symbol. 102,833 unique
+# (symbol, BP term) pairs; 4,575/4,910 EV_Table_8 rows matched (93.2%).
 # =====================================================================
 import glob
 import pandas as pd

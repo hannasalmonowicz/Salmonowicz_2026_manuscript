@@ -70,7 +70,7 @@ print()
 
 # ── SenMayo gene set (Saul et al. 2022, Nat Commun, Supplementary Data 4, sheet
 # 'human'; PMID 35974106) -- published, external reference data, hardcoded here
-# instead of a separate bundled file. See verification/PROVENANCE.md. ──────────
+# instead of a separate bundled file. ─────────────────────────────────────────
 SENMAYO_RAW_GENE_STRING = """
 ACVR1B,ANG,ANGPT1,ANGPTL4,AREG,AXL,BEX3,BMP2,BMP6,C3,CCL1,CCL13,CCL16,CCL2,CCL20,CCL24,
 CCL26,CCL3,CCL3L1,CCL4,CCL5,CCL7,CCL8,CD55,CD9,CSF1,CSF2,CSF2RB,CST4,CTNNB1,CTSB,CXCL1,
