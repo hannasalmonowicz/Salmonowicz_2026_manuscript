@@ -13,30 +13,28 @@ isolated-mitochondria proteomics (Fig 2B), and metabolomics quantification/stati
 plotting (Fig 6E and the boxplot panels). Each script reads its inputs from `data/` and
 writes its output next to itself.
 
-Every script's only inputs are the manuscript's own EV tables, plus one file committed
-directly in `figures/data/` (see "Bundled files" below) — the original, unmodified
-QuickGO Biological Process annotation export, public reference data covering the whole
-human genome, not something generated for or specific to this study. Every other
-non-EV-table dependency this repository used to have (five gene lists, plus the Payea et
-al. 2024 dataset, now EV_Table_12) is either hardcoded directly as a Python set literal
-inside the script that uses it, or prepared as a proper EV table alongside the others —
-no separate file, nothing else to download beyond the EV tables themselves.
+Every script's only inputs are the manuscript's own EV tables — nothing else to download,
+no separate bundled files. Every non-EV-table dependency this repository used to have is
+now either part of an EV table or hardcoded directly as a Python set literal inside the
+script that uses it: five gene lists are hardcoded, the Payea et al. 2024 dataset is now
+EV_Table_12, and the GO Biological Process annotation used by the EV7B bubble plots is now
+its own column, `GO_Names_P`, inside EV_Table_8 itself (see "GO annotation" below).
 
 ## Figures
 
-| Script | Figure | Output | EV table(s) needed | Bundled file(s) also used |
-|---|---|---|---|---|
-| `fig1G_generality_matrix.py` | Fig 1G | 30-model generality dot-matrix | EV_Table_8, EV_Table_10, EV_Table_12 | — |
-| `fig1H_generality_summary.py` | Fig 1H | Generality summary (diverging stacked bars) | EV_Table_8, EV_Table_10, EV_Table_12 | — |
-| `fig2B_isolated_mito_pathway_ANOVA.py` | Fig 2B | Isolated-mito pathway vs. mitoproteome (ANOVA + Bonferroni) | EV_Table_2 | — |
-| `fig4J_GSEA_SenMayo.py` | Fig 4J | SenMayo GSEA, GAL contrast | EV_Table_5 | — |
-| `fig5E_GSEA_ATF4_ISR.py` | Fig 5E | GSEA, ATF4/ISR gene list | EV_Table_8 | — |
-| `fig5G_ISR_heatmap.py` | Fig 5G | ISR/ATF4 heatmap, 10 genes | EV_Table_8, EV_Table_5 | — |
-| `fig6E_pathway_scheme.py` | Fig 6E | CAM-track pathway scheme | EV_Table_11 | — |
-| `figEV1O_OXPHOS_correlation.py` | EV1O | OXPHOS-vs-pathways correlation (3-panel scatter) | EV_Table_8, EV_Table_10, EV_Table_12 | — |
-| `metabolite_boxplots_ALL_PANELS.py` | Fig 2G/H, 4C–G, 5C, 6C/D, EV6G/H, EV10F/G–H | 21 metabolite boxplot panels | EV_Table_3 (EV_Table_11 optional — brackets read "FDR pending" without it) | — |
-| `trajectory_wholecell_proteomics.py` | Fig 1E | Time-resolved whole-cell trajectory plot | EV_Table_1 | — |
-| `GOenrichment_CAM_vs_CTRL_bubbleplots.py` | EV7B | GO Biological Process enrichment, 3 bubble plots | EV_Table_8 | `QuickGO-annotations-*.tsv` |
+| Script | Figure | Output | EV table(s) needed |
+|---|---|---|---|
+| `fig1G_generality_matrix.py` | Fig 1G | 30-model generality dot-matrix | EV_Table_8, EV_Table_10, EV_Table_12 |
+| `fig1H_generality_summary.py` | Fig 1H | Generality summary (diverging stacked bars) | EV_Table_8, EV_Table_10, EV_Table_12 |
+| `fig2B_isolated_mito_pathway_ANOVA.py` | Fig 2B | Isolated-mito pathway vs. mitoproteome (ANOVA + Bonferroni) | EV_Table_2 |
+| `fig4J_GSEA_SenMayo.py` | Fig 4J | SenMayo GSEA, GAL contrast | EV_Table_5 |
+| `fig5E_GSEA_ATF4_ISR.py` | Fig 5E | GSEA, ATF4/ISR gene list | EV_Table_8 |
+| `fig5G_ISR_heatmap.py` | Fig 5G | ISR/ATF4 heatmap, 10 genes | EV_Table_8, EV_Table_5 |
+| `fig6E_pathway_scheme.py` | Fig 6E | CAM-track pathway scheme | EV_Table_11 |
+| `figEV1O_OXPHOS_correlation.py` | EV1O | OXPHOS-vs-pathways correlation (3-panel scatter) | EV_Table_8, EV_Table_10, EV_Table_12 |
+| `metabolite_boxplots_ALL_PANELS.py` | Fig 2G/H, 4C–G, 5C, 6C/D, EV6G/H, EV10F/G–H | 21 metabolite boxplot panels | EV_Table_3 (EV_Table_11 optional — brackets read "FDR pending" without it) |
+| `trajectory_wholecell_proteomics.py` | Fig 1E | Time-resolved whole-cell trajectory plot | EV_Table_1 |
+| `GOenrichment_CAM_vs_CTRL_bubbleplots.py` | EV7B | GO Biological Process enrichment, 3 bubble plots | EV_Table_8 (needs its `GO_Names_P` column) |
 
 `fig2B`'s output reproduces the manuscript's reported n=4 (1C metabolism) and n=6
 (Sulfur metabolism) exactly.
@@ -57,8 +55,8 @@ EV table number works without a code change.
 
 ## Running
 
-Place the manuscript's EV tables under `figures/data/` (the one bundled file listed below
-is already there), then run any script from the `figures/` directory, e.g.:
+Place the manuscript's EV tables under `figures/data/`, then run any script from the
+`figures/` directory, e.g.:
 
 ```
 cd figures
@@ -68,28 +66,26 @@ python3 fig1G_generality_matrix.py
 Each script checks `./data/` first, then the current folder, and raises a clear
 `FileNotFoundError` naming exactly what's missing.
 
-## Bundled files (in figures/data/, not an EV table)
+## GO annotation (used by the EV7B bubble plots)
 
-Only one file, included verbatim and unmodified — the original QuickGO Biological
-Process annotation export (~90 MB, exported 2025-06-29). It is public, study-independent
-reference data covering the whole human genome, not filtered or restricted to this
-study's detected genes in any way, so it reveals nothing about this dataset.
-`GOenrichment_CAM_vs_CTRL_bubbleplots.py` does its own filtering (human, Biological
-Process rows) and gene-by-gene lookup at runtime — see `verification/PROVENANCE.md` for
-the exact numbers. GitHub allows files up to 100 MB without Git LFS, so this pushes fine,
-but it's close to that limit.
-
-| File | Used by |
-|---|---|
-| `QuickGO-annotations-1751219500456-20250629 (3).tsv` | `GOenrichment_CAM_vs_CTRL_bubbleplots.py` |
+`GOenrichment_CAM_vs_CTRL_bubbleplots.py` needs one extra column on EV_Table_8,
+`GO_Names_P`: for each row, the semicolon-joined set of GO Biological Process term names
+for that row's gene(s) (unioned across every constituent symbol when `Gene names` is a
+semicolon-joined protein group, e.g. `UQCRFS1;UQCRFS1P1`). It was generated once from the
+original, unmodified QuickGO Biological Process annotation export (GO release 2025-06-01,
+exported 2025-06-29), keeping only human (`TAXON ID` 9606) Biological Process
+(`GO ASPECT` `'P'`) rows — see `verification/PROVENANCE.md` for the exact derivation and
+match-rate numbers. Nothing else needs to be downloaded or bundled for this figure: the
+annotation ships as part of the EV table itself, the same as every other input in this
+repository.
 
 ## verification/
 
 Not figure-producing code, and nothing here is meant to be run — `PROVENANCE.md` is a
 plain-text reference document, not a script. It records where every non-EV-table input
-(the bundled file above, the five gene lists now hardcoded directly in the scripts, and
-the Payea dataset before it became EV_Table_12) came from and how it was derived, for the
-audit trail.
+(the five gene lists hardcoded directly in the scripts, the GO_Names_P annotation column
+now part of EV_Table_8, and the Payea dataset before it became EV_Table_12) came from and
+how it was derived, for the audit trail.
 
 ## Data
 
@@ -99,11 +95,11 @@ this repository.
 
 ## Environment
 
-Python >= 3.10 with pandas, numpy, matplotlib, seaborn, scipy, openpyxl, xlrd and
-gseapy (see `requirements.txt`).
+Python >= 3.10 with pandas, numpy, matplotlib, seaborn, scipy, openpyxl and gseapy (see
+`requirements.txt`).
 Tested with Python 3.11.15, pandas 3.0.2, numpy 2.4.4, matplotlib 3.10.9, seaborn
-0.13.2, scipy 1.17.1, openpyxl 3.1.5, xlrd 2.0.2, gseapy 1.3.1 — and separately with
-gseapy 1.1.9, the version the GSEA scripts were originally written against.
+0.13.2, scipy 1.17.1, openpyxl 3.1.5, gseapy 1.3.1 — and separately with gseapy 1.1.9,
+the version the GSEA scripts were originally written against.
 
 ## References
 
